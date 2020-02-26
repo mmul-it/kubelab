@@ -1,0 +1,32 @@
+---
+
+- name: Pulling images required for setting up a Kubernetes cluster
+  command: kubeadm config images pull
+
+- name: Resetting kubeadm
+  command: kubeadm reset -f
+
+- name: Initializing Kubernetes cluster
+  command: kubeadm init --apiserver-advertise-address {{ hostvars[kubernetes_master_node]['ansible_default_ipv4']['address'] }} --pod-network-cidr={{ cidr_v }}
+
+- name: Copying required files
+  shell: |
+   mkdir -p $HOME/.kube
+   cp -f /etc/kubernetes/admin.conf $HOME/.kube/config
+   chown $(id -u):$(id -g) $HOME/.kube/config
+
+- name: Install Network Add-on
+  command: kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+
+- name: Get Token from Kubernetes
+  shell: |
+    set -o pipefail
+    kubeadm token list | awk 'NR == 2 {print $1}'
+  register: kubernetes_token
+
+- name: Store token locally
+  copy:
+    content: "{{ kubernetes_token.stdout }}"
+    dest: "{{ local_token_file }}"
+  become: false
+  delegate_to: localhost

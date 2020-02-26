@@ -1,0 +1,51 @@
+---
+
+- hosts: kubernetes_nodes
+  become: true
+  tasks:
+    - name: SELinux - Get original state
+      command: "getenforce"
+      register: getenforce_status
+      changed_when: false
+    
+    - name: SELinux - Set original state fact
+      set_fact:
+        selinux_original_state: "{{ getenforce_status.stdout|lower }}"
+    
+    - name: "SELinux - Set the state {{ selinux_state|lower }}"
+      selinux:
+        state: "{{ selinux_state|lower }}"
+        policy: "{{ selinux_policy|lower }}"
+      register: selinux_status
+    
+    - name: "SELinux - Trying to activate state {{ selinux_state|lower }}"
+      command: "setenforce {{ selinux_state|lower }}"
+      when:
+        - selinux_original_state in [ 'enforcing', 'permissive' ]
+        - selinux_original_state != selinux_state|lower
+    
+    - name: SELinux - Rebooting required machines if selinux_force_reboot is true
+      reboot:
+        msg: "Rebooting {{ ansible_hostname }} due to SELinux state change and selinux_force_reboot set to {{ selinux_force_reboot }}"
+        test_command:
+          getenforce | grep -i {{ selinux_state|lower }}
+        reboot_timeout: 1200
+      when:
+        - selinux_status.reboot_required|bool
+        - selinux_force_reboot|bool
+
+    - import_role:
+        name: "kubernetes_common"
+
+- hosts: kubernetes_master_nodes
+  become: true
+  tasks:
+    - import_role:
+        name: "kubernetes_master"
+
+- hosts: kubernetes_worker_nodes
+  become: true
+  tasks:
+    - import_role:
+        name: "kubernetes_worker"
+

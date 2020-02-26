@@ -1,0 +1,20 @@
+---
+
+kubernetes_packages:
+  - yum-utils
+  - device-mapper-persistent-data
+  - lvm2
+  - vim
+  - firewalld
+  - docker
+  - kubeadm
+  - kubectl
+
+kubernetes_services:
+  - docker
+  - kubelet
+  - firewalld
+
+kubernetes_ports:
+  - "6443/tcp"
+  - "10250/tcp"
