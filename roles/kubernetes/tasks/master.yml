@@ -18,15 +18,6 @@
 - name: Install Network Add-on
   command: kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
 
-- name: Get Token from Kubernetes
-  shell: |
-    set -o pipefail
-    kubeadm token list | awk 'NR == 2 {print $1}'
-  register: kubernetes_token
-
-- name: Store token locally
-  copy:
-    content: "{{ kubernetes_token.stdout }}"
-    dest: "{{ local_token_file }}"
-  become: false
-  delegate_to: localhost
+- name: Enable master to run non infrastructure pods
+  command: kubectl taint nodes --all node-role.kubernetes.io/master-
+  when: run_non_infra_pods|bool

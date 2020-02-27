@@ -1,0 +1,19 @@
+---
+
+- name: Resetting kubeadm
+  command: kubeadm reset -f
+
+- name: Get Token from Kubernetes
+  shell: |
+    set -o pipefail
+    kubeadm token list | awk 'NR == 2 {print $1}'
+  changed_when: false
+  register: kubernetes_token_output
+  delegate_to: "{{ kubernetes_master_node }}"
+
+- name: Set fact token
+  set_fact:
+    kubernetes_token: "{{ kubernetes_token_output.stdout }}"
+
+- name: Joining worker nodes with kubernetes master
+  command: kubeadm join --token {{ kubernetes_token }} --discovery-token-unsafe-skip-ca-verification {{ kubernetes_master_node }}:{{ kubernetes_master_port }}

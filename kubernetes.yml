@@ -35,17 +35,4 @@
         - selinux_force_reboot|bool
 
     - import_role:
-        name: "kubernetes_common"
-
-- hosts: kubernetes_master_nodes
-  become: true
-  tasks:
-    - import_role:
-        name: "kubernetes_master"
-
-- hosts: kubernetes_worker_nodes
-  become: true
-  tasks:
-    - import_role:
-        name: "kubernetes_worker"
-
+        name: "kubernetes"
