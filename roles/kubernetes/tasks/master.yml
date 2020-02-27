@@ -21,3 +21,15 @@
 - name: Enable master to run non infrastructure pods
   command: kubectl taint nodes --all node-role.kubernetes.io/master-
   when: run_non_infra_pods|bool
+
+- name: Get Token from Kubernetes
+  shell: |
+    set -o pipefail
+    kubeadm token list | awk 'NR == 2 {print $1}'
+  changed_when: false
+  register: kubernetes_token_output
+  delegate_to: "{{ kubernetes_master_node }}"
+
+- name: Set fact token
+  set_fact:
+    kubernetes_token: "{{ kubernetes_token_output.stdout }}"
