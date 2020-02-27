@@ -1,6 +1,6 @@
 ---
 
-- hosts: kubernetes_nodes
+- hosts: k8s_nodes
   become: true
   tasks:
     - import_role:

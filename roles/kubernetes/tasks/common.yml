@@ -6,7 +6,7 @@
     regexp: '.*{{ item }}$'
     line: "{{ hostvars[item].ansible_default_ipv4.address }} {{ item }}"
     state: present
-  with_items: "{{ groups['kubernetes_nodes'] }}"
+  with_items: "{{ groups['k8s_nodes'] }}"
 
 - name: Adding Docker-CE repo
   yum_repository:
@@ -32,7 +32,7 @@
 
 - name: Installing required packages
   yum:
-   name: "{{ kubernetes_packages }}"
+   name: "{{ k8s_packages }}"
    state: present
 
 - name: Starting and Enabling the required services
@@ -41,7 +41,7 @@
    state: started
    enabled: yes
   with_items:
-    - "{{ kubernetes_services }}"
+    - "{{ k8s_services }}"
 
 - name: Allow Network Ports in Firewalld
   firewalld:
@@ -50,7 +50,7 @@
    permanent: yes
    immediate: yes
   with_items:
-    - "{{ kubernetes_ports }}"
+    - "{{ k8s_ports }}"
 
 - name: Enabling Bridge Firewall Rule
   sysctl:

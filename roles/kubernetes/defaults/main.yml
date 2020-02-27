@@ -1,6 +1,6 @@
 ---
 
-kubernetes_packages:
+k8s_packages:
   - yum-utils
   - device-mapper-persistent-data
   - lvm2
@@ -10,11 +10,11 @@ kubernetes_packages:
   - kubeadm
   - kubectl
 
-kubernetes_services:
+k8s_services:
   - docker
   - kubelet
   - firewalld
 
-kubernetes_ports:
+k8s_ports:
   - "6443/tcp"
   - "10250/tcp"

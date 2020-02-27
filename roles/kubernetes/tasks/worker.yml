@@ -4,4 +4,4 @@
   command: kubeadm reset -f
 
 - name: Joining worker nodes with kubernetes master
-  command: kubeadm join --token {{ hostvars[kubernetes_master_node]['kubernetes_token'] }} --discovery-token-unsafe-skip-ca-verification {{ kubernetes_master_node }}:{{ kubernetes_master_port }}
+  command: kubeadm join --token {{ hostvars[k8s_master_node]['k8s_token'] }} --discovery-token-unsafe-skip-ca-verification {{ k8s_master_node }}:{{ k8s_master_port }}
