@@ -1,6 +1,6 @@
 ---
 
-- name: Resetting kubeadm
+- name: Resetting Kubernetes master node
   command: kubeadm reset -f
   when:
     - k8s_reset|bool
@@ -55,10 +55,22 @@
   shell: |
     set -o pipefail
     kubeadm token list | awk 'NR == 2 {print $1}'
-  changed_when: false
   register: k8s_token_output
-  delegate_to: "{{ k8s_master_node }}"
+  changed_when: false
 
-- name: Set fact token
+- name: Set fact k8s_token_output
   set_fact:
     k8s_token: "{{ k8s_token_output.stdout }}"
+
+- name: Get SHA256 Discovery Token CA Cert Hash from Kubernetes
+  shell: |
+    openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt | \
+    openssl rsa -pubin -outform der 2>/dev/null | \
+    openssl dgst -sha256 -hex | \
+    sed 's/^.* //'
+  register: k8s_discovery_token_ca_cert_hash_output
+  changed_when: false
+
+- name: Set fact k8s_discovery_token_ca_cert_hash
+  set_fact:
+    k8s_discovery_token_ca_cert_hash: "{{ k8s_discovery_token_ca_cert_hash_output.stdout }}"

@@ -1,6 +1,6 @@
 ---
 
-- name: Resetting kubeadm
+- name: Resetting Kubernetes worker node
   command: kubeadm reset -f
   when:
     - k8s_reset|bool
@@ -17,6 +17,7 @@
 
 - name: Joining worker nodes with kubernetes master
   command: kubeadm join --token {{ hostvars[k8s_master_node]['k8s_token'] }} \
-    --discovery-token-unsafe-skip-ca-verification {{ k8s_master_node }}:{{ k8s_master_port }}
+    --discovery-token-ca-cert-hash sha256:{{ hostvars[k8s_master_node]['k8s_discovery_token_ca_cert_hash'] }} \
+    {{ k8s_master_node }}:{{ k8s_master_port }}
   when:
     - k8s_node_join_status.stdout != "Ready"
