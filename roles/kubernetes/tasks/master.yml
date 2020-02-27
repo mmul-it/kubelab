@@ -18,8 +18,20 @@
 - name: Install Network Add-on
   command: "kubectl apply -f {{ k8s_network_addon }}"
 
-- name: Enable master to run non infrastructure pods
-  command: "kubectl taint nodes {{ ansible_hostname }} node-role.kubernetes.io/master-"
+- block:
+    - name: Get taints for master node
+      shell: |
+        set -o pipefail
+        kubectl describe node {{ ansible_hostname }} | \
+        egrep '^Taints:.*node-role.kubernetes.io/master:NoSchedule'
+      register: k8s_master_get_noschedule_taint
+      changed_when: false
+      failed_when: false
+
+    - name: Enable master to run non infrastructure pods
+      command: "kubectl taint nodes {{ ansible_hostname }} node-role.kubernetes.io/master:NoSchedule-"
+      when:
+        - k8s_master_get_noschedule_taint.rc == 0
   when:
     - run_non_infra_pods is defined
     - run_non_infra_pods|bool
