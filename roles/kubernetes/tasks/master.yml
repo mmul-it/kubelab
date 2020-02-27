@@ -1,22 +1,37 @@
 ---
 
-- name: Pulling images required for setting up a Kubernetes cluster
-  command: kubeadm config images pull
-
 - name: Resetting kubeadm
   command: kubeadm reset -f
+  when:
+    - k8s_reset|bool
 
-- name: Initializing Kubernetes cluster
-  command: kubeadm init --apiserver-advertise-address {{ hostvars[k8s_master_node]['ansible_default_ipv4']['address'] }} --pod-network-cidr={{ cidr_v }}
+- name: Get k8s cluster status
+  command: kubectl cluster-info
+  register: k8s_cluster_info
+  changed_when: false
+  failed_when: false
 
-- name: Copying required files
-  shell: |
-   mkdir -p $HOME/.kube
-   cp -f /etc/kubernetes/admin.conf $HOME/.kube/config
-   chown $(id -u):$(id -g) $HOME/.kube/config
+- block:
+    - name: Pulling images required for setting up a Kubernetes cluster
+      command: kubeadm config images pull
 
-- name: Install Network Add-on
-  command: "kubectl apply -f {{ k8s_network_addon }}"
+    - name: Initializing Kubernetes cluster
+      command: kubeadm init --apiserver-advertise-address {{ hostvars[k8s_master_node]['ansible_default_ipv4']['address'] }} --pod-network-cidr={{ cidr_v }}
+
+    - name: Create local .kube directory
+      file:
+        path: .kube
+        state: directory
+
+    - name: Copying required files
+      copy:
+        src: '/etc/kubernetes/admin.conf'
+        dest:  '.kube/config'
+        remote_src: yes
+
+    - name: Install Network Add-on
+      command: "kubectl apply -f {{ k8s_network_addon }}"
+  when: k8s_cluster_info.rc != 0
 
 - block:
     - name: Get taints for master node

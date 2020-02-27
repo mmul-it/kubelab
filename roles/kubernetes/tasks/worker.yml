@@ -2,6 +2,21 @@
 
 - name: Resetting kubeadm
   command: kubeadm reset -f
+  when:
+    - k8s_reset|bool
+
+- name: "Check node join status"
+  shell: |
+    set -o pipefail
+    kubectl get nodes {{ ansible_hostname }} -o json | \
+    jq -r '.status.conditions[] | select(.reason=="KubeletReady").type'
+  register: k8s_node_join_status
+  changed_when: false
+  failed_when: false
+  delegate_to: "{{ k8s_master_node }}"
 
 - name: Joining worker nodes with kubernetes master
-  command: kubeadm join --token {{ hostvars[k8s_master_node]['k8s_token'] }} --discovery-token-unsafe-skip-ca-verification {{ k8s_master_node }}:{{ k8s_master_port }}
+  command: kubeadm join --token {{ hostvars[k8s_master_node]['k8s_token'] }} \
+    --discovery-token-unsafe-skip-ca-verification {{ k8s_master_node }}:{{ k8s_master_port }}
+  when:
+    - k8s_node_join_status.stdout != "Ready"

@@ -4,6 +4,7 @@ k8s_packages:
   - yum-utils
   - device-mapper-persistent-data
   - lvm2
+  - jq
   - vim
   - firewalld
   - docker
@@ -20,3 +21,6 @@ k8s_ports:
   - "10250/tcp"
 
 k8s_network_addon: 'https://docs.projectcalico.org/v3.11/manifests/calico.yaml'
+
+# Set this to true to force k8s cluster reset
+k8s_reset: false

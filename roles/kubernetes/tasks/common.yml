@@ -8,6 +8,11 @@
     state: present
   with_items: "{{ groups['k8s_nodes'] }}"
 
+- name: Adding EPEL repo
+  yum:
+    name: "https://dl.fedoraproject.org/pub/epel/epel-release-latest-{{ ansible_distribution_major_version }}.noarch.rpm"
+    state: present
+
 - name: Adding Docker-CE repo
   yum_repository:
     name: docker-ce
@@ -26,7 +31,7 @@
     enabled: yes
     gpgcheck: yes
     repo_gpgcheck: yes
-    gpgkey: 
+    gpgkey:
       - 'https://packages.cloud.google.com/yum/doc/yum-key.gpg'
       - 'https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg'
 
