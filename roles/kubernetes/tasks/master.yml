@@ -16,7 +16,7 @@
    chown $(id -u):$(id -g) $HOME/.kube/config
 
 - name: Install Network Add-on
-  command: kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+  command: "kubectl apply -f {{ k8s_network_addon }}"
 
 - name: Enable master to run non infrastructure pods
   command: "kubectl taint nodes {{ ansible_hostname }} node-role.kubernetes.io/master-"

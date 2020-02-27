@@ -18,3 +18,5 @@ k8s_services:
 k8s_ports:
   - "6443/tcp"
   - "10250/tcp"
+
+k8s_network_addon: 'https://docs.projectcalico.org/v3.11/manifests/calico.yaml'
