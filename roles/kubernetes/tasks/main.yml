@@ -1,0 +1,13 @@
+---
+
+- import_tasks: common.yml
+
+- import_tasks: master.yml
+  when:
+    - k8s_role is defined
+    - k8s_role == 'master'
+
+- import_tasks: worker.yml
+  when:
+    - k8s_role is defined
+    - k8s_role == 'worker'

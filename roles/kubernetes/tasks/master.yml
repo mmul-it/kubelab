@@ -1,0 +1,76 @@
+---
+
+- name: Resetting Kubernetes master node
+  command: kubeadm reset -f
+  when:
+    - k8s_reset|bool
+
+- name: Get k8s cluster status
+  command: kubectl cluster-info
+  register: k8s_cluster_info
+  changed_when: false
+  failed_when: false
+
+- block:
+    - name: Pulling images required for setting up a Kubernetes cluster
+      command: kubeadm config images pull
+
+    - name: Initializing Kubernetes cluster
+      command: kubeadm init --apiserver-advertise-address {{ hostvars[k8s_master_node]['ansible_default_ipv4']['address'] }} --pod-network-cidr={{ cidr_v }}
+
+    - name: Create local .kube directory
+      file:
+        path: .kube
+        state: directory
+
+    - name: Copying required files
+      copy:
+        src: '/etc/kubernetes/admin.conf'
+        dest:  '.kube/config'
+        remote_src: yes
+
+    - name: Install Network Add-on
+      command: "kubectl apply -f {{ k8s_network_addon }}"
+  when: k8s_cluster_info.rc != 0
+
+- block:
+    - name: Get taints for master node
+      shell: |
+        set -o pipefail
+        kubectl describe node {{ ansible_hostname }} | \
+        egrep '^Taints:.*node-role.kubernetes.io/master:NoSchedule'
+      register: k8s_master_get_noschedule_taint
+      changed_when: false
+      failed_when: false
+
+    - name: Enable master to run non infrastructure pods
+      command: "kubectl taint nodes {{ ansible_hostname }} node-role.kubernetes.io/master:NoSchedule-"
+      when:
+        - k8s_master_get_noschedule_taint.rc == 0
+  when:
+    - run_non_infra_pods is defined
+    - run_non_infra_pods|bool
+
+- name: Get Token from Kubernetes
+  shell: |
+    set -o pipefail
+    kubeadm token list | awk 'NR == 2 {print $1}'
+  register: k8s_token_output
+  changed_when: false
+
+- name: Set fact k8s_token_output
+  set_fact:
+    k8s_token: "{{ k8s_token_output.stdout }}"
+
+- name: Get SHA256 Discovery Token CA Cert Hash from Kubernetes
+  shell: |
+    openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt | \
+    openssl rsa -pubin -outform der 2>/dev/null | \
+    openssl dgst -sha256 -hex | \
+    sed 's/^.* //'
+  register: k8s_discovery_token_ca_cert_hash_output
+  changed_when: false
+
+- name: Set fact k8s_discovery_token_ca_cert_hash
+  set_fact:
+    k8s_discovery_token_ca_cert_hash: "{{ k8s_discovery_token_ca_cert_hash_output.stdout }}"

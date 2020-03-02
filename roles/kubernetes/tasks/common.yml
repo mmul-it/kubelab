@@ -1,0 +1,66 @@
+---
+
+- name: "Build hosts file"
+  lineinfile:
+    dest: /etc/hosts
+    regexp: '.*{{ item }}$'
+    line: "{{ hostvars[item].ansible_default_ipv4.address }} {{ item }}"
+    state: present
+  with_items: "{{ groups['k8s_nodes'] }}"
+
+- name: Adding EPEL repo
+  yum:
+    name: "https://dl.fedoraproject.org/pub/epel/epel-release-latest-{{ ansible_distribution_major_version }}.noarch.rpm"
+    state: present
+
+- name: Adding Docker-CE repo
+  yum_repository:
+    name: docker-ce
+    description: Docker-CE
+    baseurl: 'https://download.docker.com/linux/centos/7/$basearch/stable'
+    enabled: yes
+    gpgcheck: yes
+    repo_gpgcheck: yes
+    gpgkey: 'https://download.docker.com/linux/centos/gpg'
+
+- name: Adding Kubernetes repo
+  yum_repository:
+    name: kubernetes
+    description: Kubernetes
+    baseurl: 'https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64'
+    enabled: yes
+    gpgcheck: yes
+    repo_gpgcheck: yes
+    gpgkey:
+      - 'https://packages.cloud.google.com/yum/doc/yum-key.gpg'
+      - 'https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg'
+
+- name: Installing required packages
+  yum:
+   name: "{{ k8s_packages }}"
+   state: present
+
+- name: Starting and Enabling the required services
+  service:
+   name: "{{ item }}"
+   state: started
+   enabled: yes
+  with_items:
+    - "{{ k8s_services }}"
+
+- name: Allow Network Ports in Firewalld
+  firewalld:
+   port: "{{ item }}"
+   state: enabled
+   permanent: yes
+   immediate: yes
+  with_items:
+    - "{{ k8s_ports }}"
+
+- name: Enabling Bridge Firewall Rule
+  sysctl:
+    name: net.bridge.bridge-nf-call-iptables
+    value: '1'
+    sysctl_set: yes
+    state: present
+    reload: yes
