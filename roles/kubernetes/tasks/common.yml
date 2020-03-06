@@ -45,6 +45,7 @@
    name: "{{ item }}"
    state: started
    enabled: yes
+   masked: no
   with_items:
     - "{{ k8s_services }}"
 
