@@ -1,5 +1,21 @@
 ---
 
+- name: Checking active SWAP
+  command: swapon -s
+  register: active_swap
+  changed_when: false
+
+- name: Disabling SWAP since kubernetes can't work with swap enabled
+  command: swapoff -a
+  when:
+    - active_swap.stdout != ""
+
+- name: Disabling SWAP in fstab since kubernetes can't work with swap enabled
+  replace:
+    path: /etc/fstab
+    regexp: '^([^#].*?\sswap\s+sw\s+.*)$'
+    replace: '# \1'
+
 - name: "Build hosts file"
   lineinfile:
     dest: /etc/hosts
