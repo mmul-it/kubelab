@@ -4,7 +4,6 @@ k8s_packages:
   - yum-utils
   - device-mapper-persistent-data
   - lvm2
-  - jq
   - vim
   - firewalld
   - docker

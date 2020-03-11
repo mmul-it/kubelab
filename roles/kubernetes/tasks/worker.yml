@@ -6,10 +6,7 @@
     - k8s_reset|bool
 
 - name: "Check node join status"
-  shell: |
-    set -o pipefail
-    kubectl get nodes {{ ansible_fqdn }} -o json | \
-    jq -r '.status.conditions[] | select(.reason=="KubeletReady").type'
+  command: kubectl get nodes {{ ansible_fqdn }} -o jsonpath='{.status.conditions[?(@.reason == "KubeletReady")].type}'
   register: k8s_node_join_status
   changed_when: false
   failed_when: false
