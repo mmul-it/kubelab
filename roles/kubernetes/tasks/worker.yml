@@ -8,7 +8,7 @@
 - name: "Check node join status"
   shell: |
     set -o pipefail
-    kubectl get nodes {{ ansible_hostname }} -o json | \
+    kubectl get nodes {{ ansible_fqdn }} -o json | \
     jq -r '.status.conditions[] | select(.reason=="KubeletReady").type'
   register: k8s_node_join_status
   changed_when: false
