@@ -65,14 +65,52 @@
   with_items:
     - "{{ k8s_services }}"
 
-- name: Allow Network Ports in Firewalld
+- name: Allow master node network ports in Firewalld
   firewalld:
    port: "{{ item }}"
    state: enabled
    permanent: yes
    immediate: yes
   with_items:
-    - "{{ k8s_ports }}"
+    - "{{ k8s_master_ports }}"
+  when:
+    - k8s_role is defined
+    - k8s_role == 'master'
+
+- name: Allow worker node network ports in Firewalld
+  firewalld:
+   port: "{{ item }}"
+   state: enabled
+   permanent: yes
+   immediate: yes
+  with_items:
+    - "{{ k8s_worker_ports }}"
+  when:
+    - k8s_role is defined
+    - k8s_role == 'worker'
+
+- name: Allow NodePort network ports in Firewalld
+  firewalld:
+   port: "{{ item }}"
+   state: enabled
+   permanent: yes
+   immediate: yes
+  with_items:
+    - "{{ k8s_nodeport_ports }}"
+  when:
+    - k8s_role is defined
+    - k8s_role == 'worker' or run_non_infra_pods|bool
+
+- name: Allow network addon ports
+  firewalld:
+   port: "{{ item }}"
+   state: enabled
+   permanent: yes
+   immediate: yes
+  with_items:
+    - "{{ k8s_network_addon_ports }}"
+  when:
+    - k8s_role is defined
 
 - name: Enabling Bridge Firewall Rule
   sysctl:

@@ -15,11 +15,28 @@ k8s_services:
   - kubelet
   - firewalld
 
-k8s_ports:
-  - "6443/tcp"
-  - "10250/tcp"
-
 k8s_network_addon: 'https://docs.projectcalico.org/v3.11/manifests/calico.yaml'
+
+k8s_master_ports:
+  - 6443/tcp
+  - 2379-2380/tcp
+  - 10250/tcp
+  - 10251/tcp
+  - 10252/tcp
+
+k8s_worker_ports:
+  - 10250/tcp
+
+k8s_nodeport_ports:
+  - 30000-32767/tcp
+
+k8s_network_addon: calico
+
+k8s_network_addon_ports:
+  - 179/tcp
+  - 4789/udp
+  - 5473/tcp
+  - 4789/udp
 
 # Set this to true to force k8s cluster reset
 k8s_reset: false
