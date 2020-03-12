@@ -17,21 +17,33 @@
       command: kubeadm config images pull
 
     - name: Initializing Kubernetes cluster
-      command: kubeadm init --apiserver-advertise-address {{ hostvars[k8s_master_node]['ansible_default_ipv4']['address'] }} --pod-network-cidr={{ cidr_v }}
+      command: kubeadm init --apiserver-advertise-address {{ hostvars[k8s_master_node]['ansible_default_ipv4']['address'] }} --pod-network-cidr={{ k8s_cidr }}
 
-    - name: Create local .kube directory
+    - name: Create local directories
       file:
-        path: .kube
+        path: "{{ item }}"
         state: directory
+        owner: "{{ ansible_user }}"
+      with_items:
+        - .kube
+        - kubernetes
 
     - name: Copying required files
       copy:
         src: '/etc/kubernetes/admin.conf'
         dest:  '.kube/config'
         remote_src: yes
+        owner: "{{ ansible_user }}"
+
+    - name: Deploying network addon template
+      template:
+        src: "templates/{{ k8s_network_addon }}.yaml.j2"
+        dest:  "kubernetes/{{ k8s_network_addon }}.yaml"
+        owner: "{{ ansible_user }}"
+      become: false
 
     - name: Install Network Add-on
-      command: "kubectl apply -f {{ k8s_network_addon }}"
+      command: "kubectl apply -f {{ k8s_network_addon }}.yaml"
       become: false
   when: k8s_cluster_info.rc != 0
 

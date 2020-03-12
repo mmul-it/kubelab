@@ -15,7 +15,7 @@ k8s_services:
   - kubelet
   - firewalld
 
-k8s_network_addon: 'https://docs.projectcalico.org/v3.11/manifests/calico.yaml'
+k8s_cidr: 172.16.0.0/16
 
 k8s_master_ports:
   - 6443/tcp
