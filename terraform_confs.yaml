@@ -1,0 +1,7 @@
+---
+
+- hosts: localhost
+  become: true
+  tasks:
+    - import_role:
+        name: 'terraform_confs'
