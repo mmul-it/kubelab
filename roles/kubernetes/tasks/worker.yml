@@ -4,6 +4,7 @@
   command: kubeadm reset -f
   when:
     - k8s_reset|bool
+  become: true
 
 - name: "Check node join status"
   command: kubectl get nodes {{ ansible_fqdn }} -o jsonpath='{.status.conditions[?(@.reason == "KubeletReady")].type}'
@@ -11,7 +12,6 @@
   changed_when: false
   failed_when: false
   delegate_to: "{{ k8s_master_node }}"
-  become: false
 
 - name: Joining worker nodes with kubernetes master
   command: kubeadm join --token {{ hostvars[k8s_master_node]['k8s_token'] }} \
@@ -19,3 +19,4 @@
     {{ k8s_master_node }}:{{ k8s_master_port }}
   when:
     - k8s_node_join_status.stdout != "Ready"
+  become: true

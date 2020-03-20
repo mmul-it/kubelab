@@ -1,6 +1,7 @@
 ---
 
 - import_tasks: common.yml
+  become: true
 
 - import_tasks: master.yml
   when:

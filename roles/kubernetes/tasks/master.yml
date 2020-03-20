@@ -4,20 +4,22 @@
   command: kubeadm reset -f
   when:
     - k8s_reset|bool
+  become: true
 
 - name: Get k8s cluster status
   command: kubectl cluster-info
   register: k8s_cluster_info
   changed_when: false
   failed_when: false
-  become: false
 
 - block:
     - name: Pulling images required for setting up a Kubernetes cluster
       command: kubeadm config images pull
+      become: true
 
     - name: Initializing Kubernetes cluster
       command: kubeadm init --apiserver-advertise-address {{ hostvars[k8s_master_node]['ansible_default_ipv4']['address'] }} --pod-network-cidr={{ k8s_cidr }}
+      become: true
 
     - name: Create local directories
       file:
@@ -34,17 +36,16 @@
         dest:  '.kube/config'
         remote_src: yes
         owner: "{{ ansible_user }}"
+      become: true
 
     - name: Deploying network addon template
       template:
         src: "templates/{{ k8s_network_addon }}.yaml.j2"
         dest:  "kubernetes/{{ k8s_network_addon }}.yaml"
         owner: "{{ ansible_user }}"
-      become: false
 
     - name: Install Network Add-on
       command: "kubectl apply -f {{ k8s_network_addon }}.yaml"
-      become: false
 
     - block:
         - name: Deploying dashboard templates
@@ -62,7 +63,6 @@
             - "{{ k8s_dashboard_resources }}"
       when:
         - k8s_dashboard_deploy|bool
-      become: false
 
   when: k8s_cluster_info.rc != 0
 
@@ -77,7 +77,7 @@
       failed_when: false
 
     - name: Enable master to run non infrastructure pods
-      command: "kubectl taint nodes {{ ansible_hostname }} node-role.kubernetes.io/master:NoSchedule-"
+      command: "kubectl taint nodes {{ ansible_fqdn }} node-role.kubernetes.io/master:NoSchedule-"
       when:
         - k8s_master_get_noschedule_taint.rc == 0
   when:
@@ -103,6 +103,7 @@
     sed 's/^.* //'
   register: k8s_discovery_token_ca_cert_hash_output
   changed_when: false
+  become: true
 
 - name: Set fact k8s_discovery_token_ca_cert_hash
   set_fact:
