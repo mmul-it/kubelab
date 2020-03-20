@@ -12,3 +12,8 @@
   when:
     - k8s_role is defined
     - k8s_role == 'worker'
+
+- import_tasks: csi-ceph.yml
+  when:
+    - k8s_role is defined
+    - k8s_role == 'master'

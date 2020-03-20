@@ -44,5 +44,9 @@ k8s_dashboard_resources:
   - dashboard-admin-user_ClusterRoleBinding.yaml
   - dashboard-admin-user_ServiceAccount.yaml
 
+k8s_csi_ceph_id: ceph
+k8s_csi_ceph_secret_userid: kubernetes
+k8s_csi_ceph_secret_userkey: password
+
 # Set this to true to force k8s cluster reset
 k8s_reset: false
