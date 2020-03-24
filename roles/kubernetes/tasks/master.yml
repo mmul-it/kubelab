@@ -45,7 +45,7 @@
         owner: "{{ ansible_user }}"
 
     - name: Install Network Add-on
-      command: "kubectl apply -f {{ k8s_network_addon }}.yaml"
+      command: "kubectl apply -f kubernetes/{{ k8s_network_addon }}.yaml"
 
     - block:
         - name: Deploying dashboard templates
@@ -56,10 +56,12 @@
           with_items:
             - "{{ k8s_dashboard_resources }}"
 
-        - name: Creating Kubernetes Dashboard resources
-          command: "kubectl apply -f {{ item }}"
+        - name: Creating Kubernetes Dashboard resource from url
+          command: "kubectl apply -f {{ k8s_dashboard_url }}"
+
+        - name: Creating Kubernetes Dashboard access resources
+          command: "kubectl apply -f kubernetes/{{ item }}"
           with_items:
-            - "{{ k8s_dashboard_url }}"
             - "{{ k8s_dashboard_resources }}"
       when:
         - k8s_dashboard_deploy|bool
