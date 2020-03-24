@@ -17,3 +17,4 @@
   when:
     - k8s_role is defined
     - k8s_role == 'master'
+    - k8s_csi_ceph_enable|bool
