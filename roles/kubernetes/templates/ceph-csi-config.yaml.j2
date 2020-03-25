@@ -8,8 +8,9 @@ data:
         "clusterID": "{{ k8s_ceph_csi_clusterid }}",
         "monitors": [
           {% for osd in k8s_ceph_csi_monitors %}
-          {{ osd }}{% if not loop.last %},{% endif %}
-          {% endfor -%}
+          "{{ osd }}"{% if not loop.last %},{% endif %}
+
+          {% endfor %}
         ]
       }
     ]
