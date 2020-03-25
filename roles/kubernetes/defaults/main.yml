@@ -44,7 +44,7 @@ k8s_dashboard_resources:
   - dashboard-admin-user_ClusterRoleBinding.yaml
   - dashboard-admin-user_ServiceAccount.yaml
 
-k8s_csi_ceph_enable: false
+k8s_ceph_csi_enable: false
 
 # Set this to true to force k8s cluster reset
 k8s_reset: false

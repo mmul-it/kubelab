@@ -1,0 +1,55 @@
+---
+
+- name: Deploy CSI RBD secret yaml
+  template:
+    src: "templates/ceph-csi-secret.yaml.j2"
+    dest:  "kubernetes/ceph-csi-secret.yaml"
+    owner: "{{ ansible_user }}"
+
+- name: Check whether the secret is already defined
+  command: kubectl get secret csi-rbd-secret -o jsonpath='{.metadata.name}'
+  register: k8s_ceph_csi_secret
+  changed_when: false
+  failed_when: false
+
+- name: Create the CSI RBD secret from yaml
+  shell: |
+    kubectl apply -f kubernetes/ceph-csi-secret.yaml
+  when:
+    - k8s_ceph_csi_secret.rc != 0
+
+- name: Deploy Ceph CSI config map yaml
+  template:
+    src: "templates/ceph-csi-config.yaml.j2"
+    dest:  "kubernetes/ceph-csi-config.yaml"
+    owner: "{{ ansible_user }}"
+
+- name: Check whether the config map is already defined
+  command: kubectl get configmap ceph-csi-config -o jsonpath='{.metadata.name}'
+  register: k8s_ceph_csi_config
+  changed_when: false
+  failed_when: false
+
+- name: Create the CSI RBD config map from yaml
+  shell: |
+    kubectl apply -f kubernetes/ceph-csi-config.yaml
+  when:
+    - k8s_ceph_csi_config.rc != 0
+
+- name: Deploy Ceph CSI encryption KMS config map yaml
+  template:
+    src: "templates/ceph-csi-encryption-kms-config.yaml.j2"
+    dest:  "kubernetes/ceph-csi-encryption-kms-config-{{ k8s_csi_ceph_id }}.yaml"
+    owner: "{{ ansible_user }}"
+
+- name: Check whether the Ceph CSI encryption KMS config map is already defined
+  command: kubectl get configmap ceph-csi-encryption-kms-config -o jsonpath='{.metadata.name}'
+  register: k8s_ceph_csi_encryption_kms_config
+  changed_when: false
+  failed_when: false
+
+- name: Create the Ceph CSI encryption KMS config map config map from yaml
+  shell: |
+    kubectl apply -f kubernetes/ceph-csi-encryption-kms-config-{{ k8s_csi_ceph_id }}.yaml
+  when:
+    - k8s_ceph_csi_encryption_kms_config.rc != 0
