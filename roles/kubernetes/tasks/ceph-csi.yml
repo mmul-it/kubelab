@@ -105,3 +105,22 @@
     kubectl apply -f {{ k8s_ceph_csi_rbdplugin_url }}
   when:
     - k8s_ceph_csi_rbdplugin.rc != 0
+
+# Ceph CSI StorageClass
+- name: Deploy CSI RBD StorageClass yaml
+  template:
+    src: "templates/ceph-csi-storageclass.yaml.j2"
+    dest:  "kubernetes/ceph-csi-storageclass.yaml"
+    owner: "{{ ansible_user }}"
+
+- name: Check whether the StorageClass is already defined
+  command: kubectl get storageclass csi-rbd-sc -o jsonpath='{.metadata.name}'
+  register: k8s_ceph_csi_storageclass
+  changed_when: false
+  failed_when: false
+
+- name: Create the CSI RBD StorageClass from yaml
+  shell: |
+    kubectl apply -f kubernetes/ceph-csi-storageclass.yaml
+  when:
+    - k8s_ceph_csi_storageclass.rc != 0
