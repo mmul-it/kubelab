@@ -1,5 +1,6 @@
 ---
 
+# Ceph CSI Secret
 - name: Deploy CSI RBD secret yaml
   template:
     src: "templates/ceph-csi-secret.yaml.j2"
@@ -18,6 +19,7 @@
   when:
     - k8s_ceph_csi_secret.rc != 0
 
+# Ceph CSI ConfigMap
 - name: Deploy Ceph CSI config map yaml
   template:
     src: "templates/ceph-csi-config.yaml.j2"
@@ -39,7 +41,7 @@
 - name: Deploy Ceph CSI encryption KMS config map yaml
   template:
     src: "templates/ceph-csi-encryption-kms-config.yaml.j2"
-    dest:  "kubernetes/ceph-csi-encryption-kms-config-{{ k8s_csi_ceph_id }}.yaml"
+    dest:  "kubernetes/ceph-csi-encryption-kms-config.yaml"
     owner: "{{ ansible_user }}"
 
 - name: Check whether the Ceph CSI encryption KMS config map is already defined
@@ -50,6 +52,56 @@
 
 - name: Create the Ceph CSI encryption KMS config map config map from yaml
   shell: |
-    kubectl apply -f kubernetes/ceph-csi-encryption-kms-config-{{ k8s_csi_ceph_id }}.yaml
+    kubectl apply -f kubernetes/ceph-csi-encryption-kms-config.yaml
   when:
     - k8s_ceph_csi_encryption_kms_config.rc != 0
+
+# Ceph CSI RBAC provisioner and nodeplugin
+- name: Check whether the Ceph CSI provisioner RBAC is already defined
+  command: kubectl get serviceaccounts rbd-csi-provisioner -o jsonpath='{.metadata.name}'
+  register: k8s_ceph_csi_provisioner_rbac
+  changed_when: false
+  failed_when: false
+
+- name: Create the Ceph CSI provisioner RBAC from yaml
+  shell: |
+    kubectl apply -f {{ k8s_ceph_csi_provisioner_rbac_url }}
+  when:
+    - k8s_ceph_csi_provisioner_rbac.rc != 0
+
+- name: Check whether the Ceph CSI nodeplugin RBAC is already defined
+  command: kubectl get serviceaccounts rbd-csi-nodeplugin -o jsonpath='{.metadata.name}'
+  register: k8s_ceph_csi_nodeplugin_rbac
+  changed_when: false
+  failed_when: false
+
+- name: Create the Ceph CSI nodeplugin RBAC from yaml
+  shell: |
+    kubectl apply -f {{ k8s_ceph_csi_nodeplugin_rbac_url }}
+  when:
+    - k8s_ceph_csi_nodeplugin_rbac.rc != 0
+
+# Ceph CSI RBD plugin provisioner and metrics
+- name: Check whether the Ceph CSI RBD plugin provisioner service is already defined
+  command: kubectl get service csi-rbdplugin-provisioner -o jsonpath='{.metadata.name}'
+  register: k8s_ceph_csi_rbdplugin_provisioner
+  changed_when: false
+  failed_when: false
+
+- name: Create the Ceph CSI RBD plugin provisioner service from yaml
+  shell: |
+    kubectl apply -f {{ k8s_ceph_csi_rbdplugin_provisioner_url }}
+  when:
+    - k8s_ceph_csi_rbdplugin_provisioner.rc != 0
+
+- name: Check whether the Ceph CSI rbdplugin daemonset is already defined
+  command: kubectl get daemonset csi-rbdplugin -o jsonpath='{.metadata.name}'
+  register: k8s_ceph_csi_rbdplugin
+  changed_when: false
+  failed_when: false
+
+- name: Create the Ceph CSI RBD plugin daemonset from yaml
+  shell: |
+    kubectl apply -f {{ k8s_ceph_csi_rbdplugin_url }}
+  when:
+    - k8s_ceph_csi_rbdplugin.rc != 0
