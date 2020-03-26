@@ -41,8 +41,8 @@ k8s_network_addon_ports:
 k8s_dashboard_deploy: true
 k8s_dashboard_url: https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0-rc5/aio/deploy/recommended.yaml
 k8s_dashboard_resources:
-  - dashboard-admin-user_ClusterRoleBinding.yaml
-  - dashboard-admin-user_ServiceAccount.yaml
+  - dashboard-admin-user_clusterrolebinding.yaml
+  - dashboard-admin-user_serviceaccount.yaml
 
 k8s_ceph_csi_enable: false
 k8s_ceph_csi_provisioner_rbac_url: https://raw.githubusercontent.com/ceph/ceph-csi/master/deploy/rbd/kubernetes/csi-provisioner-rbac.yaml
