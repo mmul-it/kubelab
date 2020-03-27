@@ -13,6 +13,15 @@
     - k8s_role is defined
     - k8s_role == 'worker'
 
+- include_tasks: users.yml
+  with_items:
+    - "{{ k8s_users }}"
+  loop_control:
+    loop_var: k8s_user
+  when:
+    - k8s_role is defined
+    - k8s_role == 'master'
+
 - import_tasks: ceph-csi.yml
   when:
     - k8s_role is defined

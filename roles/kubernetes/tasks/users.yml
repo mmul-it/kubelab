@@ -1,0 +1,93 @@
+---
+
+- name: "Ensure the kubernetes-admin@kubernetes context is used"
+  command: kubectl config use-context kubernetes-admin@kubernetes
+  changed_when: false
+
+- name: "Check if the desired namespace {{ k8s_user.namespace }} for user {{ k8s_user.name }} exists"
+  command: kubectl get namespace {{ k8s_user.namespace }} -o jsonpath='{.metadata.name}'
+  register: k8s_user_namespace
+  changed_when: false
+  failed_when: false
+
+- name: "Create namespace {{ k8s_user.namespace }}"
+  command: kubectl create namespace {{ k8s_user.namespace }}
+  when:
+    - k8s_user_namespace.rc != 0
+
+- name: "Deploy template for Kubernetes role {{ k8s_user.role_name }} for the user {{ k8s_user.name }}"
+  template:
+    src: user-role.yaml.j2
+    dest: kubernetes/{{ k8s_user.name }}-role.yaml
+
+- name: "Deploy template for Kubernetes role binding {{ k8s_user.rolebinding_name }} for the user {{ k8s_user.name }}"
+  template:
+    src: user-rolebinding.yaml.j2
+    dest: kubernetes/{{ k8s_user.name }}-rolebinding.yaml
+
+- name: "Check if role {{ k8s_user.role_name }} for {{ k8s_user.name }} exists"
+  command: kubectl -n {{ k8s_user.namespace }} get role {{ k8s_user.role_name }} -o jsonpath='{.metadata.name}'
+  register: k8s_user_role
+  changed_when: false
+  failed_when: false
+
+- name: "Create Kubernetes role for the user {{ k8s_user.name }}"
+  command: kubectl create -f kubernetes/{{ k8s_user.name }}-role.yaml
+  when:
+    - k8s_user_role.rc != 0
+
+- name: "Check if role binding {{ k8s_user.rolebinding_name }} for {{ k8s_user.name }} exists"
+  command: kubectl -n {{ k8s_user.namespace }} get rolebinding {{ k8s_user.rolebinding_name }} -o jsonpath='{.metadata.name}'
+  register: k8s_user_rolebinding
+  changed_when: false
+  failed_when: false
+
+- name: "Create Kubernetes role binding for the user {{ k8s_user.name }}"
+  command: kubectl create -f kubernetes/{{ k8s_user.name }}-rolebinding.yaml
+  when:
+    - k8s_user_rolebinding.rc != 0
+
+- name: "Check if certificates path for {{ k8s_user.name }} already exists"
+  stat:
+    path: "{{ k8s_user.cert_path }}/{{ k8s_user.name }}.crt"
+  register: k8s_user_cert
+
+- block:
+    - name: "Create destination directory for certificates for {{ k8s_user.name }}"
+      file:
+        path: "{{ k8s_user.cert_path }}"
+        state: directory
+
+    - name: "Generate key for user {{ k8s_user.name }}"
+      command: openssl genrsa -out {{ k8s_user.cert_path }}/{{ k8s_user.name }}.key 2048
+    
+    - name: "Generater csr for user {{ k8s_user.name }}"
+      command: openssl req -new -key {{ k8s_user.cert_path }}/{{ k8s_user.name }}.key -out {{ k8s_user.cert_path }}/{{ k8s_user.name }}.csr -subj "/CN={{ k8s_user.name }}/O={{ k8s_user.namespace }}"
+    
+    - name: "Generater key for user {{ k8s_user.name }}"
+      command: openssl x509 -req -in {{ k8s_user.cert_path }}/{{ k8s_user.name }}.csr -CA /etc/kubernetes/pki/ca.crt -CAkey /etc/kubernetes/pki/ca.key -CAcreateserial -out {{ k8s_user.cert_path }}/{{ k8s_user.name }}.crt -days {{ k8s_user.cert_expire_days }}
+      become: true
+
+    - name: "Force update context in the kube config (since there's a new certificate)"
+      set_fact:
+        k8s_user_force_context_update: true
+  when:
+    - not k8s_user_cert.stat.exists|bool
+
+- block:
+    - name: "Check if context for user {{ k8s_user.name }} exists"
+      command: kubectl config get-contexts {{ k8s_user.name }}-context
+      register: k8s_user_context
+      changed_when: false
+      failed_when: false
+    
+    - block:
+        - name: "Add credentials for use {{ k8s_user.name }} to .kube/config"
+          command: kubectl config set-credentials {{ k8s_user.name }} --client-certificate={{ k8s_user.cert_path }}/{{ k8s_user.name }}.crt --client-key={{ k8s_user.cert_path }}/{{ k8s_user.name }}.key
+        
+        - name: "Create context for user {{ k8s_user.name }} in namespace {{ k8s_user.namespace }}"
+          command: kubectl config set-context {{ k8s_user.name }}-context --cluster=kubernetes --namespace={{ k8s_user.namespace }} --user={{ k8s_user.name }}
+      when:
+        - k8s_user_context.rc != 0 or (k8s_user_force_context_update is defined and k8s_user_force_context_update|bool)
+  when:
+    - k8s_user.update_kube_config|bool

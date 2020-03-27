@@ -1,0 +1,10 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: {{ k8s_user.namespace }}
+  name: {{ k8s_user.role_name }}
+rules:
+  - apiGroups: [{{ k8s_user.role_rules_apigroups }}] # "" indicates the core API group
+    resources: [{{ k8s_user.role_rules_resources }}]
+    verbs: [{{ k8s_user.role_rules_verbs }}]
