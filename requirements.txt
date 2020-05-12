@@ -1,0 +1,3 @@
+ansible==2.9.5
+ansible-vault
+azure-cli
