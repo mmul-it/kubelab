@@ -1,3 +1,5 @@
 inventory
 !inventory/lab
 terraform
+*.swp
+*.swo
