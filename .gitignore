@@ -1,6 +1,7 @@
 inventory
 !inventory/lab
 terraform
+.terraform
 !roles/terraform
 *.swp
 *.swo
