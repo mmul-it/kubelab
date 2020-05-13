@@ -3,5 +3,6 @@ inventory
 terraform
 .terraform
 !roles/terraform
+venv*
 *.swp
 *.swo
