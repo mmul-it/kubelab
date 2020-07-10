@@ -1,0 +1,4 @@
+---
+
+- name: "Configure SELinux"
+  import_tasks: selinux.yml

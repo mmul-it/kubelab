@@ -1,0 +1,6 @@
+---
+
+# SELinux
+selinux_state: 'permissive'
+selinux_policy: 'targeted'
+selinux_force_reboot: false
