@@ -1,8 +1,7 @@
-inventory
+inventory/*
 !inventory/lab
-terraform
-.terraform
-!roles/terraform
+/terraform
+/.terraform
 venv*
 *.swp
 *.swo
