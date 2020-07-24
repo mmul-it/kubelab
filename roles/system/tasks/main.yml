@@ -2,3 +2,21 @@
 
 - name: "Configure SELinux"
   import_tasks: selinux.yml
+
+- name: "Configure specific sysctl values"
+  sysctl:
+    name: "{{ item.key }}"
+    value: "{{ item.value }}"
+    sysctl_set: yes
+    state: present
+    reload: yes
+  with_dict:
+    - "{{ system_sysctls }}"
+
+- name: Configure systemd onetime services
+  include_tasks: systemd_onetime_service.yml
+  with_items:
+    - "{{ system_systemd_onetime_services }}"
+  loop_control:
+    loop_var: systemd_onetime_service
+  when: system_systemd_onetime_services is defined

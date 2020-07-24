@@ -1,0 +1,17 @@
+---
+
+- name: "Create systemd onetime service {{ systemd_onetime_service.description }}"
+  template:
+    src: systemd_onetime.service.j2
+    dest: "/etc/systemd/system/{{ systemd_onetime_service.name }}.service"
+    owner: 'root'
+    group: 'root'
+    mode: 0644
+  notify:
+    - systemctl daemon-reload
+
+- name: "Activate and check systemd onetime service {{ systemd_onetime_service.description }}"
+  service:
+    name: "{{ systemd_onetime_service.name }}"
+    state: 'started'
+    enabled: true

@@ -4,3 +4,17 @@
 selinux_state: 'permissive'
 selinux_policy: 'targeted'
 selinux_force_reboot: false
+
+# System sysctl settings dictionary
+# Line format is:
+# sysctl.setting.name: value
+system_sysctls: {}
+
+# Define one time services managed by systemd.
+# Element of the list can be declared like:
+# - name: 'disable-thp'
+#   description: 'Disable Transparent Huge Pages (THP)'
+#   command: "/bin/sh -c \"echo 'never' > /sys/kernel/mm/transparent_hugepage/enabled && echo 'never' > /sys/kernel/mm/transparent_hugepage/defrag\""
+#   before_services:
+#     - "redis_default"
+system_systemd_onetime_services: {}
