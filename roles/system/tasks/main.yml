@@ -19,4 +19,6 @@
     - "{{ system_systemd_onetime_services }}"
   loop_control:
     loop_var: systemd_onetime_service
-  when: system_systemd_onetime_services is defined
+  when:
+    - system_systemd_onetime_services is defined
+    - system_systemd_onetime_services | length > 0
