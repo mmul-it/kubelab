@@ -65,57 +65,72 @@
   with_items:
     - "{{ k8s_services }}"
 
-- name: Allow master node network ports in Firewalld
-  firewalld:
-   port: "{{ item }}"
-   state: enabled
-   permanent: yes
-   immediate: yes
-  with_items:
-    - "{{ k8s_master_ports }}"
-  when:
-    - k8s_role is defined
-    - k8s_role == 'master'
+- block:
+    - name: Installing required packages
+      yum:
+       name: firewalld
+       state: present
 
-- name: Allow worker node network ports in Firewalld
-  firewalld:
-   port: "{{ item }}"
-   state: enabled
-   permanent: yes
-   immediate: yes
-  with_items:
-    - "{{ k8s_worker_ports }}"
-  when:
-    - k8s_role is defined
-    - k8s_role == 'worker'
+    - name: Starting and Enabling the firewalld service
+      service:
+       name: firewalld
+       state: started
+       enabled: yes
+       masked: no
 
-- name: Allow NodePort network ports in Firewalld
-  firewalld:
-   port: "{{ item }}"
-   state: enabled
-   permanent: yes
-   immediate: yes
-  with_items:
-    - "{{ k8s_nodeport_ports }}"
-  when:
-    - k8s_role is defined
-    - k8s_role == 'worker' or run_non_infra_pods|bool
+    - name: Allow master node network ports in Firewalld
+      firewalld:
+       port: "{{ item }}"
+       state: enabled
+       permanent: yes
+       immediate: yes
+      with_items:
+        - "{{ k8s_master_ports }}"
+      when:
+        - k8s_role is defined
+        - k8s_role == 'master'
 
-- name: Allow network addon ports
-  firewalld:
-   port: "{{ item }}"
-   state: enabled
-   permanent: yes
-   immediate: yes
-  with_items:
-    - "{{ k8s_network_addon_ports }}"
-  when:
-    - k8s_role is defined
+    - name: Allow worker node network ports in Firewalld
+      firewalld:
+       port: "{{ item }}"
+       state: enabled
+       permanent: yes
+       immediate: yes
+      with_items:
+        - "{{ k8s_worker_ports }}"
+      when:
+        - k8s_role is defined
+        - k8s_role == 'worker'
 
-- name: Enabling Bridge Firewall Rule
-  sysctl:
-    name: net.bridge.bridge-nf-call-iptables
-    value: '1'
-    sysctl_set: yes
-    state: present
-    reload: yes
+    - name: Allow NodePort network ports in Firewalld
+      firewalld:
+       port: "{{ item }}"
+       state: enabled
+       permanent: yes
+       immediate: yes
+      with_items:
+        - "{{ k8s_nodeport_ports }}"
+      when:
+        - k8s_role is defined
+        - k8s_role == 'worker' or run_non_infra_pods|bool
+
+    - name: Allow network addon ports
+      firewalld:
+       port: "{{ item }}"
+       state: enabled
+       permanent: yes
+       immediate: yes
+      with_items:
+        - "{{ k8s_network_addon_ports }}"
+      when:
+        - k8s_role is defined
+
+    - name: Enabling Bridge Firewall Rule
+      sysctl:
+        name: net.bridge.bridge-nf-call-iptables
+        value: '1'
+        sysctl_set: yes
+        state: present
+        reload: yes
+  when:
+    - k8s_firewalld_enable|bool
