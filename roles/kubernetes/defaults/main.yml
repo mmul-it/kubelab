@@ -1,5 +1,7 @@
 ---
 
+k8s_epel_enable: true
+
 k8s_packages:
   - yum-utils
   - device-mapper-persistent-data
