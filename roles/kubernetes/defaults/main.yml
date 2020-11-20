@@ -7,7 +7,7 @@ k8s_packages:
   - device-mapper-persistent-data
   - lvm2
   - vim
-  - docker
+  - docker-ce
   - kubeadm
   - kubectl
 
