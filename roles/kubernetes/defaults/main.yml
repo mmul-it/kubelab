@@ -15,8 +15,6 @@ k8s_services:
   - docker
   - kubelet
 
-k8s_cidr: 172.16.0.0/16
-
 k8s_master_ports:
   - 6443/tcp
   - 2379-2380/tcp
@@ -32,7 +30,9 @@ k8s_nodeport_ports:
 
 k8s_firewalld_enable: true
 
+k8s_network_cidr: 172.16.0.0/16
 k8s_network_addon: calico
+k8s_network_calico_ip_autodetection_method: 'interface=eth*'
 
 k8s_network_addon_ports:
   - 179/tcp

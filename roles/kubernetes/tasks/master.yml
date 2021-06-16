@@ -18,7 +18,7 @@
       become: true
 
     - name: Initializing Kubernetes cluster
-      command: kubeadm init --apiserver-advertise-address {{ hostvars[k8s_master_node]['ansible_default_ipv4']['address'] }} --pod-network-cidr={{ k8s_cidr }}
+      command: kubeadm init --apiserver-advertise-address {{ hostvars[k8s_master_node]['ansible_default_ipv4']['address'] }} --pod-network-cidr={{ k8s_network_cidr }}
       become: true
 
     - name: Create local directories
