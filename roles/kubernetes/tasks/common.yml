@@ -61,6 +61,15 @@
       - 'https://packages.cloud.google.com/yum/doc/yum-key.gpg'
       - 'https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg'
 
+- name: Adding Repo keys
+  rpm_key:
+    state: present
+    key: "{{ item }}"
+  with_items:
+    - 'https://download.docker.com/linux/centos/gpg'
+    - 'https://packages.cloud.google.com/yum/doc/yum-key.gpg'
+    - 'https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg'
+
 - name: Installing required packages
   yum:
    name: "{{ k8s_packages }}"
