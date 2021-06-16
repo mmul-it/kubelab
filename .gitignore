@@ -5,3 +5,5 @@ inventory/*
 venv*
 *.swp
 *.swo
+collections/*
+!collections/requirements.yml
