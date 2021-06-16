@@ -16,6 +16,14 @@
     regexp: '^([^#].* swap .*)$'
     replace: '#\1'
 
+- name: Enable /proc/sys/net/bridge/bridge-nf-call-iptables
+  sysctl:
+    name: net.bridge.bridge-nf-call-iptables
+    value: 1
+    sysctl_set: yes
+    state: present
+    reload: yes
+
 - name: "Build hosts file"
   lineinfile:
     dest: /etc/hosts
