@@ -21,6 +21,7 @@
   when:
     - k8s_role is defined
     - k8s_role == 'master'
+    - k8s_users is defined
 
 - import_tasks: ceph-csi.yml
   when:
