@@ -16,6 +16,11 @@
     regexp: '^([^#].* swap .*)$'
     replace: '#\1'
 
+- name: Ensure br_netfilter is enabled
+  modprobe:
+    name: br_netfilter
+    state: present
+
 - name: Enable /proc/sys/net/bridge/bridge-nf-call-iptables
   sysctl:
     name: net.bridge.bridge-nf-call-iptables
