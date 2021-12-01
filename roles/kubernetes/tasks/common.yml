@@ -1,93 +1,93 @@
 ---
 
-#- name: Checking active SWAP
-#  command: swapon -s
-#  register: active_swap
-#  changed_when: false
-#
-#- name: Disabling SWAP since kubernetes can't work with swap enabled
-#  command: swapoff -a
-#  when:
-#    - active_swap.stdout != ""
-#
-#- name: Disabling SWAP in fstab since kubernetes can't work with swap enabled
-#  replace:
-#    path: /etc/fstab
-#    regexp: '^([^#].* swap .*)$'
-#    replace: '#\1'
-#
-#- name: Ensure br_netfilter is enabled
-#  modprobe:
-#    name: br_netfilter
-#    state: present
-#
-#- name: Enable /proc/sys/net/bridge/bridge-nf-call-iptables
-#  sysctl:
-#    name: net.bridge.bridge-nf-call-iptables
-#    value: 1
-#    sysctl_set: yes
-#    state: present
-#    reload: yes
-#
-#- name: "Build hosts file"
-#  lineinfile:
-#    dest: /etc/hosts
-#    regexp: '.*{{ item }}$'
-#    line: "{{ hostvars[item].ansible_default_ipv4.address }} {{ item }}"
-#    state: present
-#  with_items: "{{ groups['k8s_nodes'] }}"
-#
-#- name: Adding EPEL repo
-#  yum:
-#    name: "https://dl.fedoraproject.org/pub/epel/epel-release-latest-{{ ansible_distribution_major_version }}.noarch.rpm"
-#    state: present
-#  when:
-#    - k8s_epel_enable|bool
-#
-#- name: Adding Docker-CE repo
-#  yum_repository:
-#    name: docker-ce
-#    description: Docker-CE
-#    baseurl: 'https://download.docker.com/linux/centos/7/$basearch/stable'
-#    enabled: yes
-#    gpgcheck: yes
-#    repo_gpgcheck: yes
-#    gpgkey: 'https://download.docker.com/linux/centos/gpg'
-#
-#- name: Adding Kubernetes repo
-#  yum_repository:
-#    name: kubernetes
-#    description: Kubernetes
-#    baseurl: 'https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64'
-#    enabled: yes
-#    gpgcheck: yes
-#    repo_gpgcheck: yes
-#    gpgkey:
-#      - 'https://packages.cloud.google.com/yum/doc/yum-key.gpg'
-#      - 'https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg'
-#
-#- name: Adding Repo keys
-#  rpm_key:
-#    state: present
-#    key: "{{ item }}"
-#  with_items:
-#    - 'https://download.docker.com/linux/centos/gpg'
-#    - 'https://packages.cloud.google.com/yum/doc/yum-key.gpg'
-#    - 'https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg'
-#
-#- name: Installing required packages
-#  yum:
-#   name: "{{ k8s_packages }}"
-#   state: present
-#
-#- name: Starting and Enabling the required services
-#  service:
-#   name: "{{ item }}"
-#   state: started
-#   enabled: yes
-#   masked: no
-#  with_items:
-#    - "{{ k8s_services }}"
+- name: Checking active SWAP
+  command: swapon -s
+  register: active_swap
+  changed_when: false
+
+- name: Disabling SWAP since kubernetes can't work with swap enabled
+  command: swapoff -a
+  when:
+    - active_swap.stdout != ""
+
+- name: Disabling SWAP in fstab since kubernetes can't work with swap enabled
+  replace:
+    path: /etc/fstab
+    regexp: '^([^#].* swap .*)$'
+    replace: '#\1'
+
+- name: Ensure br_netfilter is enabled
+  modprobe:
+    name: br_netfilter
+    state: present
+
+- name: Enable /proc/sys/net/bridge/bridge-nf-call-iptables
+  sysctl:
+    name: net.bridge.bridge-nf-call-iptables
+    value: 1
+    sysctl_set: yes
+    state: present
+    reload: yes
+
+- name: "Build hosts file"
+  lineinfile:
+    dest: /etc/hosts
+    regexp: '.*{{ item }}$'
+    line: "{{ hostvars[item].ansible_default_ipv4.address }} {{ item }}"
+    state: present
+  with_items: "{{ groups['k8s_nodes'] }}"
+
+- name: Adding EPEL repo
+  yum:
+    name: "https://dl.fedoraproject.org/pub/epel/epel-release-latest-{{ ansible_distribution_major_version }}.noarch.rpm"
+    state: present
+  when:
+    - k8s_epel_enable|bool
+
+- name: Adding Docker-CE repo
+  yum_repository:
+    name: docker-ce
+    description: Docker-CE
+    baseurl: 'https://download.docker.com/linux/centos/7/$basearch/stable'
+    enabled: yes
+    gpgcheck: yes
+    repo_gpgcheck: yes
+    gpgkey: 'https://download.docker.com/linux/centos/gpg'
+
+- name: Adding Kubernetes repo
+  yum_repository:
+    name: kubernetes
+    description: Kubernetes
+    baseurl: 'https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64'
+    enabled: yes
+    gpgcheck: yes
+    repo_gpgcheck: yes
+    gpgkey:
+      - 'https://packages.cloud.google.com/yum/doc/yum-key.gpg'
+      - 'https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg'
+
+- name: Adding Repo keys
+  rpm_key:
+    state: present
+    key: "{{ item }}"
+  with_items:
+    - 'https://download.docker.com/linux/centos/gpg'
+    - 'https://packages.cloud.google.com/yum/doc/yum-key.gpg'
+    - 'https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg'
+
+- name: Installing required packages
+  yum:
+   name: "{{ k8s_packages }}"
+   state: present
+
+- name: Starting and Enabling the required services
+  service:
+   name: "{{ item }}"
+   state: started
+   enabled: yes
+   masked: no
+  with_items:
+    - "{{ k8s_services }}"
 
 - name: Set Docker's daemon.json extra options
   template:
