@@ -13,7 +13,7 @@
   when:
     - k8s_role is defined
     - k8s_role == 'master'
-    - k8s_multi_master|int > 1
+    - k8s_multi_master
 
 - import_tasks: worker.yml
   when:
