@@ -1,0 +1,34 @@
+! /etc/keepalived/keepalived.conf
+! Configuration File for keepalived
+global_defs {
+    router_id LVS_DEVEL
+}
+vrrp_script check_apiserver {
+  script "/etc/keepalived/check_apiserver.sh"
+  interval 3
+  weight -2
+  fall 10
+  rise 2
+}
+
+vrrp_instance VI_1 {
+{% if inventory_hostname == k8s_master_node %}
+    state MASTER
+    priority 101
+{% else %}
+    state BACKUP
+    priority 100
+{% endif %}
+    interface {{ k8s_balancer_interface }}
+    virtual_router_id 60
+    authentication {
+        auth_type PASS
+        auth_pass {{ k8s_balancer_pw }}
+    }
+    virtual_ipaddress {
+        {{ k8s_balancer_VIP }}
+    }
+    track_script {
+        check_apiserver
+    }
+}
