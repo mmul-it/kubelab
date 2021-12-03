@@ -1,5 +1,9 @@
 ---
 
+- name: Check if the infrastructure is multi-master
+  set_fact:
+    k8s_multi_master: "{{ ansible_play_batch | map('extract', hostvars, 'k8s_role') | select('equalto', 'master') | length }}"
+
 - name: Resetting Kubernetes master node
   command: kubeadm reset -f
   when:
@@ -12,14 +16,49 @@
   changed_when: false
   failed_when: false
 
-- block:
+- name: Generating credentials and global variables for multi-master
+  block:
+  - name: Generate random pw for Keepalived
+    command: openssl rand -hex 7
+    register: k8s_balancer_pw_out
+
+  - name: Set fact k8s_balancer_pw (for Keepalived)
+    set_fact:
+      k8s_balancer_pw: "{{ k8s_balancer_pw_out.stdout }}"
+    delegate_to: "{{ item }}"
+    with_items: "{{ ansible_play_batch }}"
+
+  - name: Generate random key for k8s certificate encription
+    command: openssl rand -hex 32
+    register: k8s_cert_key_out
+
+  - name: Set fact k8s_cert_key (for multi-master)
+    set_fact:
+      k8s_cert_key: "{{ k8s_cert_key_out.stdout }}"
+    delegate_to: "{{ item }}"
+    with_items: "{{ ansible_play_batch }}"
+  run_once: yes
+
+- name: Setting up the master node
+  block:
     - name: Pulling images required for setting up a Kubernetes cluster
       command: kubeadm config images pull
       become: true
 
     - name: Initializing Kubernetes cluster
+      command: |
+        kubeadm init \
+        --control-plane-node {{ k8s_balancer_VIP }}:{{ k8s_balancer_port }} \
+        --certificate-key {{ k8s_cert_key }} \
+        --upload-certs \
+        --pod-network-cidr={{ k8s_network_cidr }}
+      become: true
+      when: k8s_multi_master|int > 1
+
+    - name: Initializing Kubernetes cluster
       command: kubeadm init --apiserver-advertise-address {{ hostvars[k8s_master_node]['ansible_default_ipv4']['address'] }} --pod-network-cidr={{ k8s_network_cidr }}
       become: true
+      when: k8s_multi_master|int == 1
 
     - name: Create local directories
       file:
@@ -66,7 +105,9 @@
       when:
         - k8s_dashboard_deploy|bool
 
-  when: k8s_cluster_info.rc != 0
+  when:
+    - k8s_cluster_info.rc != 0
+    - inventory_hostname == k8s_master_node
 
 - block:
     - name: Get taints for master node
@@ -86,27 +127,29 @@
     - run_non_infra_pods is defined
     - run_non_infra_pods|bool
 
-- name: Get Token from Kubernetes
-  shell: |
-    set -o pipefail
-    kubeadm token list | awk 'NR == 2 {print $1}'
-  register: k8s_token_output
-  changed_when: false
+- name: Set kubeadm join credentials from master node
+  block:
+  - name: Get Token from Kubernetes
+    shell: |
+      set -o pipefail
+      kubeadm token list | awk 'NR == 2 {print $1}'
+    register: k8s_token_output
+    changed_when: false
 
-- name: Set fact k8s_token_output
-  set_fact:
-    k8s_token: "{{ k8s_token_output.stdout }}"
+  - name: Set fact k8s_token_output
+    set_fact:
+      k8s_token: "{{ k8s_token_output.stdout }}"
 
-- name: Get SHA256 Discovery Token CA Cert Hash from Kubernetes
-  shell: |
-    openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt | \
-    openssl rsa -pubin -outform der 2>/dev/null | \
-    openssl dgst -sha256 -hex | \
-    sed 's/^.* //'
-  register: k8s_discovery_token_ca_cert_hash_output
-  changed_when: false
-  become: true
+  - name: Get SHA256 Discovery Token CA Cert Hash from Kubernetes
+    shell: |
+      openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt | \
+      openssl rsa -pubin -outform der 2>/dev/null | \
+      openssl dgst -sha256 -hex | \
+      sed 's/^.* //'
+    register: k8s_discovery_token_ca_cert_hash_output
+    changed_when: false
+    become: true
 
-- name: Set fact k8s_discovery_token_ca_cert_hash
-  set_fact:
-    k8s_discovery_token_ca_cert_hash: "{{ k8s_discovery_token_ca_cert_hash_output.stdout }}"
+  - name: Set fact k8s_discovery_token_ca_cert_hash
+    set_fact:
+      k8s_discovery_token_ca_cert_hash: "{{ k8s_discovery_token_ca_cert_hash_output.stdout }}"
