@@ -16,6 +16,7 @@ k8s_services:
   - kubelet
 
 k8s_balancer_port: 8443
+k8s_multi_master: false
 
 k8s_master_ports:
   - 6443/tcp

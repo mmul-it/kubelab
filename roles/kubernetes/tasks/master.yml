@@ -1,9 +1,5 @@
 ---
 
-- name: Check if the infrastructure is multi-master
-  set_fact:
-    k8s_multi_master: "{{ ansible_play_batch | map('extract', hostvars, 'k8s_role') | select('equalto', 'master') | length > 1 }}"
-
 - name: Resetting Kubernetes master node
   command: kubeadm reset -f
   when:
@@ -53,12 +49,12 @@
         --upload-certs \
         --pod-network-cidr={{ k8s_network_cidr }}
       become: true
-      when: k8s_multi_master
+      when: k8s_multi_master | bool
 
     - name: Initializing Kubernetes cluster
       command: kubeadm init --apiserver-advertise-address {{ hostvars[k8s_master_node]['ansible_default_ipv4']['address'] }} --pod-network-cidr={{ k8s_network_cidr }}
       become: true
-      when: not k8s_multi_master
+      when: not k8s_multi_master | bool
 
     - name: Create local directories
       file:
