@@ -1,35 +1,9 @@
-#---------------------------------------------------------------------                                                                                                                                [17/87]
-# Example configuration for a possible web application.  See the
-# full configuration options online.
-#
-#   http://haproxy.1wt.eu/download/1.4/doc/configuration.txt
-#
-#---------------------------------------------------------------------
-
 #---------------------------------------------------------------------
 # Global settings
 #---------------------------------------------------------------------
 global
-    # to have these messages end up in /var/log/haproxy.log you will
-    # need to:
-    #
-    # 1) configure syslog to accept network log events.  This is done
-    #    by adding the '-r' option to the SYSLOGD_OPTIONS in
-    #    /etc/sysconfig/syslog
-    #
-    # 2) configure local2 events to go to the /var/log/haproxy.log
-    #   file. A line like the following can be added to
-    #   /etc/sysconfig/syslog
-    #
-    #    local2.*                       /var/log/haproxy.log
-    #
-    log         127.0.0.1 local2
-
-    chroot      /var/lib/haproxy
-    pidfile     /var/run/haproxy.pid
-    maxconn     4000
-    user        haproxy
-    group       haproxy
+    log /dev/log local0
+    log /dev/log local1 notice
     daemon
 
 #---------------------------------------------------------------------
@@ -67,11 +41,14 @@ frontend apiserver
 # round robin balancing between the various k8s masters
 #---------------------------------------------------------------------
 backend apiserver
+    option  httpchk GET /readyz HTTP/1.0
+    option  log-health-checks
+    http-check expect status 200
+    mode tcp
     balance     roundrobin
+    default-server verify none check-ssl inter 10s downinter 5s rise 2 fall 2 slowstart 60s maxconn 5000 maxqueue 5000 weight 100
 {% for host in ansible_play_batch %}
 {% if hostvars[host].k8s_role == 'master' %}
     server master-{{ loop.index }} {{ host }}:{{ hostvars[host].k8s_master_port }} check
 {% endif %}
 {% endfor %}
-
-

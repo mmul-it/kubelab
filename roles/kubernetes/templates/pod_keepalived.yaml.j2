@@ -23,9 +23,9 @@ spec:
   hostNetwork: true
   volumes:
   - hostPath:
-      path: /etc/keepalived/keepalived.conf
+      path: /usr/local/etc/keepalived/keepalived.conf
     name: config
   - hostPath:
-      path: /etc/keepalived/check_apiserver.sh
+      path: /usr/local/etc/keepalived/check_apiserver.sh
     name: check
 status: {}
