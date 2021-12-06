@@ -20,6 +20,7 @@ k8s_multi_master: false
 
 k8s_master_ports:
   - 6443/tcp
+  - 8443/tcp
   - 2379-2380/tcp
   - 10250/tcp
   - 10251/tcp
