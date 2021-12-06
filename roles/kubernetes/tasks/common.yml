@@ -144,7 +144,7 @@
         - "{{ k8s_nodeport_ports }}"
       when:
         - k8s_role is defined
-        - k8s_role == 'worker' or run_non_infra_pods|bool
+        - k8s_role == 'worker' or (run_non_infra_pods is defined and run_non_infra_pods|bool)
 
     - name: Allow network addon ports
       firewalld:
