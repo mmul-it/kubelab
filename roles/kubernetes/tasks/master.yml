@@ -14,26 +14,79 @@
 
 - name: Generating credentials and global variables for multi-master
   block:
-  - name: Generate random pw for Keepalived
-    command: openssl rand -hex 7
-    register: k8s_balancer_pw_out
+    - name: Generate random pw for Keepalived
+      command: openssl rand -hex 7
+      register: k8s_balancer_pw_out
 
-  - name: Set fact k8s_balancer_pw (for Keepalived)
-    set_fact:
-      k8s_balancer_pw: "{{ k8s_balancer_pw_out.stdout }}"
-    delegate_to: "{{ item }}"
-    with_items: "{{ ansible_play_batch }}"
+    - name: Set fact k8s_balancer_pw (for Keepalived)
+      set_fact:
+        k8s_balancer_pw: "{{ k8s_balancer_pw_out.stdout }}"
+      delegate_to: "{{ item }}"
+      with_items: "{{ ansible_play_batch }}"
 
-  - name: Generate random key for k8s certificate encription
-    command: openssl rand -hex 32
-    register: k8s_cert_key_out
+    - name: Generate random key for k8s certificate encription
+      command: openssl rand -hex 32
+      register: k8s_cert_key_out
 
-  - name: Set fact k8s_cert_key (for multi-master)
-    set_fact:
-      k8s_cert_key: "{{ k8s_cert_key_out.stdout }}"
-    delegate_to: "{{ item }}"
-    with_items: "{{ ansible_play_batch }}"
+    - name: Set fact k8s_cert_key (for multi-master)
+      set_fact:
+        k8s_cert_key: "{{ k8s_cert_key_out.stdout }}"
+      delegate_to: "{{ item }}"
+      with_items: "{{ ansible_play_batch }}"
   run_once: yes
+
+- name: Multi master directories and files
+  block:
+    - name: Directories
+      file:
+        path: "/usr/local/etc/{{ item }}"
+        state: directory
+      with_items:
+        - haproxy
+        - keepalived
+
+    - name: Coping haproxy.cfg template file
+      template:
+        src: templates/haproxy.cfg.j2
+        dest: /usr/local/etc/haproxy/haproxy.cfg
+        owner: root
+        group: root
+        mode: 0644
+
+    - name: Coping keepalived.conf template file
+      template:
+        src: templates/keepalived.conf.j2
+        dest: /usr/local/etc/keepalived/keepalived.conf
+        owner: root
+        group: root
+        mode: 0644
+
+    - name: Coping keepalived check script
+      template:
+        src: templates/check_apiserver.sh.j2
+        dest: /usr/local/etc/keepalived/check_apiserver.sh
+        owner: root
+        group: root
+        mode: 0744
+
+    - name: Coping keepalived pod configuration
+      template:
+        src: templates/pod_keepalived.yaml.j2
+        dest: /etc/kubernetes/manifests/keepalived.yaml
+        owner: root
+        group: root
+        mode: 0644
+
+    - name: Coping Haproxy pod configuration
+      template:
+        src: templates/pod_haproxy.yaml.j2
+        dest: /etc/kubernetes/manifests/haproxy.yaml
+        owner: root
+        group: root
+        mode: 0644
+  when:
+    - k8s_multi_master | bool
+    - inventory_hostname == k8s_master_node
 
 - name: Setting up the master node
   block:
@@ -44,7 +97,7 @@
     - name: Initializing Kubernetes cluster
       command: |
         kubeadm init \
-        --control-plane-node {{ k8s_balancer_VIP }}:{{ k8s_balancer_port }} \
+        --control-plane-endpoint {{ k8s_balancer_VIP }}:{{ k8s_balancer_port }} \
         --certificate-key {{ k8s_cert_key }} \
         --upload-certs \
         --pod-network-cidr={{ k8s_network_cidr }}
@@ -125,27 +178,29 @@
 
 - name: Set kubeadm join credentials from master node
   block:
-  - name: Get Token from Kubernetes
-    shell: |
-      set -o pipefail
-      kubeadm token list | awk 'NR == 2 {print $1}'
-    register: k8s_token_output
-    changed_when: false
+    - name: Get Token from Kubernetes
+      shell: |
+        set -o pipefail
+        kubeadm token list | awk 'NR == 2 {print $1}'
+      register: k8s_token_output
+      changed_when: false
 
-  - name: Set fact k8s_token_output
-    set_fact:
-      k8s_token: "{{ k8s_token_output.stdout }}"
+    - name: Set fact k8s_token_output
+      set_fact:
+        k8s_token: "{{ k8s_token_output.stdout }}"
 
-  - name: Get SHA256 Discovery Token CA Cert Hash from Kubernetes
-    shell: |
-      openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt | \
-      openssl rsa -pubin -outform der 2>/dev/null | \
-      openssl dgst -sha256 -hex | \
-      sed 's/^.* //'
-    register: k8s_discovery_token_ca_cert_hash_output
-    changed_when: false
-    become: true
+    - name: Get SHA256 Discovery Token CA Cert Hash from Kubernetes
+      shell: |
+        openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt | \
+        openssl rsa -pubin -outform der 2>/dev/null | \
+        openssl dgst -sha256 -hex | \
+        sed 's/^.* //'
+      register: k8s_discovery_token_ca_cert_hash_output
+      changed_when: false
+      become: true
 
-  - name: Set fact k8s_discovery_token_ca_cert_hash
-    set_fact:
-      k8s_discovery_token_ca_cert_hash: "{{ k8s_discovery_token_ca_cert_hash_output.stdout }}"
+    - name: Set fact k8s_discovery_token_ca_cert_hash
+      set_fact:
+        k8s_discovery_token_ca_cert_hash: "{{ k8s_discovery_token_ca_cert_hash_output.stdout }}"
+  when:
+    - inventory_hostname == k8s_master_node

@@ -1,68 +1,22 @@
 ---
 
-- name: Coping haproxy.cfg template file
-  template:
-    src: templates/haproxy.cfg.j2
-    dest: /usr/local/etc/haproxy/haproxy.cfg
-    owner: root
-    group: root
-    mode: 0644
-
-- name: Coping keepalived.conf template file
-  template:
-    src: templates/keepalived.conf.j2
-    dest: /usr/local/etc/keepalived/keepalived.conf
-    owner: root
-    group: root
-    mode: 0644
-
-- name: Coping keepalived check script
-  template:
-    src: templates/check_apiserver.sh.j2
-    dest: /usr/local/etc/keepalived/check_apiserver.sh
-    owner: root
-    group: root
-    mode: 0744
-
-- name: Coping keepalived pod configuration
-  template:
-    src: templates/pod_keepalived.yaml.j2
-    dest: /etc/kubernetes/manifests/keepalived.yaml
-    owner: root
-    group: root
-    mode: 0644
-
-- name: Coping Haproxy pod configuration
-  template:
-    src: templates/pod_haproxy.yaml.j2
-    dest: /etc/kubernetes/manifests/haproxy.yaml
-    owner: root
-    group: root
-    mode: 0644
-
 - name: Setting up other masters
   block:
-  - name: Resetting Kubernetes control-plane node
-    command: kubeadm reset -f
-    when:
-      - k8s_reset|bool
-    become: true
+    - name: "Check node join status"
+      command: kubectl get nodes {{ ansible_fqdn }} -o jsonpath='{.status.conditions[?(@.reason == "KubeletReady")].type}'
+      register: k8s_node_join_status
+      changed_when: false
+      failed_when: false
+      delegate_to: "{{ k8s_master_node }}"
 
-  - name: "Check node join status"
-    command: kubectl get nodes {{ ansible_fqdn }} -o jsonpath='{.status.conditions[?(@.reason == "KubeletReady")].type}'
-    register: k8s_node_join_status
-    changed_when: false
-    failed_when: false
-    delegate_to: "{{ k8s_master_node }}"
-
-  - name: Joining control-plane nodes with kubernetes master
-    command: |
-      kubeadm join {{ k8s_balancer_VIP }}:{{ k8s_balancer_port }} \
-      --token {{ hostvars[k8s_master_node]['k8s_token'] }} \
-      --discovery-token-ca-cert-hash sha256:{{ hostvars[k8s_master_node]['k8s_discovery_token_ca_cert_hash'] }} \
-      --control-plane \
-      --certificate-key {{ k8s_cert_key }}
-    when:
-      - k8s_node_join_status.stdout != "Ready"
-    become: true
+    - name: Joining control-plane nodes with kubernetes master
+      command: |
+        kubeadm join {{ k8s_balancer_VIP }}:{{ k8s_balancer_port }} \
+        --token {{ hostvars[k8s_master_node]['k8s_token'] }} \
+        --discovery-token-ca-cert-hash sha256:{{ hostvars[k8s_master_node]['k8s_discovery_token_ca_cert_hash'] }} \
+        --control-plane \
+        --certificate-key {{ k8s_cert_key }}
+      when:
+        - k8s_node_join_status.stdout != "Ready"
+      become: true
   when: inventory_hostname != k8s_master_node
