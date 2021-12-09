@@ -45,45 +45,40 @@
         - haproxy
         - keepalived
 
-    - name: Coping haproxy.cfg template file
+    - name: Creating haproxy.cfg file
       template:
-        src: templates/haproxy.cfg.j2
+        src: haproxy.cfg.j2
         dest: /usr/local/etc/haproxy/haproxy.cfg
         owner: root
         group: root
         mode: 0644
 
-    - name: Coping keepalived.conf template file
+    - name: Creating keepalived.conf file
       template:
-        src: templates/keepalived.conf.j2
+        src: keepalived.conf.j2
         dest: /usr/local/etc/keepalived/keepalived.conf
         owner: root
         group: root
         mode: 0644
 
-    - name: Coping keepalived check script
+    - name: "Creating {{ item }} pod configuration"
+      template:
+        src: "{{ item }}_pod.yaml.j2"
+        dest: "/etc/kubernetes/manifests/{{ item }}.yaml"
+        owner: root
+        group: root
+        mode: 0644
+      with_items:
+        - haproxy
+        - keepalived
+
+    - name: Creating keepalived check script
       template:
         src: templates/check_apiserver.sh.j2
         dest: /usr/local/etc/keepalived/check_apiserver.sh
         owner: root
         group: root
-        mode: 0744
-
-    - name: Coping keepalived pod configuration
-      template:
-        src: templates/pod_keepalived.yaml.j2
-        dest: /etc/kubernetes/manifests/keepalived.yaml
-        owner: root
-        group: root
-        mode: 0644
-
-    - name: Coping Haproxy pod configuration
-      template:
-        src: templates/pod_haproxy.yaml.j2
-        dest: /etc/kubernetes/manifests/haproxy.yaml
-        owner: root
-        group: root
-        mode: 0644
+        mode: 0755
   when:
     - k8s_multi_master | bool
     - inventory_hostname == k8s_master_node
