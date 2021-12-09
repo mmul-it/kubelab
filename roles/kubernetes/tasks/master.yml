@@ -12,28 +12,15 @@
   changed_when: false
   failed_when: false
 
-- name: Generating credentials and global variables for multi-master
-  block:
-    - name: Generate random pw for Keepalived
-      command: openssl rand -hex 7
-      register: k8s_balancer_pw_out
+- name: Set control plane endpoint for single node
+  set_fact:
+    k8s_control_plane_endpoint: "{{ hostvars[k8s_master_node]['ansible_default_ipv4']['address'] }}"
+  when: not k8s_multi_master | bool
 
-    - name: Set fact k8s_balancer_pw (for Keepalived)
-      set_fact:
-        k8s_balancer_pw: "{{ k8s_balancer_pw_out.stdout }}"
-      delegate_to: "{{ item }}"
-      with_items: "{{ ansible_play_batch }}"
-
-    - name: Generate random key for k8s certificate encription
-      command: openssl rand -hex 32
-      register: k8s_cert_key_out
-
-    - name: Set fact k8s_cert_key (for multi-master)
-      set_fact:
-        k8s_cert_key: "{{ k8s_cert_key_out.stdout }}"
-      delegate_to: "{{ item }}"
-      with_items: "{{ ansible_play_batch }}"
-  run_once: yes
+- name: Set control plane endpoint for multi master
+  set_fact:
+    k8s_control_plane_endpoint: "{{ k8s_balancer_VIP }}:{{ k8s_balancer_port }}"
+  when: k8s_multi_master | bool
 
 - name: Multi master directories and files
   block:
@@ -61,7 +48,7 @@
         group: root
         mode: 0644
 
-    - name: "Creating {{ item }} pod configuration"
+    - name: Creating pod configurations"
       template:
         src: "{{ item }}_pod.yaml.j2"
         dest: "/etc/kubernetes/manifests/{{ item }}.yaml"
@@ -92,17 +79,12 @@
     - name: Initializing Kubernetes cluster
       command: |
         kubeadm init \
-        --control-plane-endpoint {{ k8s_balancer_VIP }}:{{ k8s_balancer_port }} \
-        --certificate-key {{ k8s_cert_key }} \
-        --upload-certs \
-        --pod-network-cidr={{ k8s_network_cidr }}
+        --control-plane-endpoint {{ k8s_control_plane_endpoint }} \
+        --apiserver-bind-port {{ k8s_master_port }}
+        --pod-network-cidr={{ k8s_network_cidr }} \
+        --certificate-key {{ k8s_master_cert_key }} \
+        --upload-certs
       become: true
-      when: k8s_multi_master | bool
-
-    - name: Initializing Kubernetes cluster
-      command: kubeadm init --apiserver-advertise-address {{ hostvars[k8s_master_node]['ansible_default_ipv4']['address'] }} --pod-network-cidr={{ k8s_network_cidr }}
-      become: true
-      when: not k8s_multi_master | bool
 
     - name: Create local directories
       file:
@@ -148,7 +130,6 @@
             - "{{ k8s_dashboard_resources }}"
       when:
         - k8s_dashboard_deploy|bool
-
   when:
     - k8s_cluster_info.rc != 0
     - inventory_hostname == k8s_master_node
@@ -211,11 +192,11 @@
 
     - name: Joining control-plane nodes with kubernetes master
       command: |
-        kubeadm join {{ k8s_balancer_VIP }}:{{ k8s_balancer_port }} \
+        kubeadm join {{ k8s_control_plane_endpoint }} \
         --token {{ hostvars[k8s_master_node]['k8s_token'] }} \
         --discovery-token-ca-cert-hash sha256:{{ hostvars[k8s_master_node]['k8s_discovery_token_ca_cert_hash'] }} \
         --control-plane \
-        --certificate-key {{ k8s_cert_key }}
+        --certificate-key {{ k8s_master_cert_key }}
       when:
         - k8s_node_join_status.stdout != "Ready"
       become: true

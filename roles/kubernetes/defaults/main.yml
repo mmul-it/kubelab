@@ -15,16 +15,40 @@ k8s_services:
   - docker
   - kubelet
 
-k8s_balancer_port: 8443
+# The main master node from which all will be driven
+k8s_master_node: kubernetes-1
+
+# The master port on which Kubernetes will serve
+k8s_master_port: 6443
+
+# Define the certificate key for k8s encryption
+# If you need to generate random key for k8s certificate encryption use:
+# openssl rand -hex 32
+k8s_master_cert_key: "91bded725a628a081d74888df8745172ed842fe30c7a3898b3c63ca98c7226fd"
+
+# Multi master
+# Set to true if you want a multi master setup:
 k8s_multi_master: false
+
+# Multi master - Define balancer VIP:
+# k8s_balancer_VIP: 192.168.122.199
+#
+# Multi master - Define balancer port
+# k8s_balancer_port: 8443
+# 
+# Multi master - Define balancer password
+# If you need to generate password just use:
+# openssl rand -hex 7
+# k8s_balancer_password: "d6e284576158b1"
 
 k8s_master_ports:
   - 6443/tcp
-  - 8443/tcp
   - 2379-2380/tcp
   - 10250/tcp
   - 10251/tcp
   - 10252/tcp
+  # Multi master - Remember to enable the load balancer port
+  #- 8443/tcp
 
 k8s_worker_ports:
   - 10250/tcp

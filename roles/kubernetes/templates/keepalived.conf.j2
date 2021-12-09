@@ -23,7 +23,7 @@ vrrp_instance VI_1 {
     virtual_router_id 60
     authentication {
         auth_type PASS
-        auth_pass {{ k8s_balancer_pw }}
+        auth_pass {{ k8s_balancer_password }}
     }
     virtual_ipaddress {
         {{ k8s_balancer_VIP }}
