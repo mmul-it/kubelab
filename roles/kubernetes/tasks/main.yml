@@ -8,13 +8,6 @@
     - k8s_role is defined
     - k8s_role == 'master'
 
-- import_tasks: multi-master.yml
-  become: true
-  when:
-    - k8s_role is defined
-    - k8s_role == 'master'
-    - k8s_multi_master | bool
-
 - import_tasks: worker.yml
   when:
     - k8s_role is defined
