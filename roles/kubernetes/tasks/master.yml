@@ -157,7 +157,7 @@
     - name: Get Token from Kubernetes
       shell: |
         set -o pipefail
-        kubeadm token list | awk 'NR == 2 {print $1}'
+        kubeadm token list | grep 'system:bootstrappers:kubeadm' | awk '{print $1}'
       register: k8s_token_output
       changed_when: false
 
