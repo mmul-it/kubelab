@@ -110,6 +110,12 @@
        enabled: yes
        masked: no
 
+    - name: Allow masquerade in Firewalld
+      firewalld:
+        masquerade: yes
+        state: enabled
+        permanent: yes
+
     - name: Allow master node network ports in Firewalld
       firewalld:
        port: "{{ item }}"
