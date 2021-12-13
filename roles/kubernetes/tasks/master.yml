@@ -66,6 +66,7 @@
         owner: root
         group: root
         mode: 0755
+  become: true
   when:
     - k8s_multi_master | bool
 
@@ -195,6 +196,7 @@
         --discovery-token-ca-cert-hash sha256:{{ hostvars[k8s_master_node]['k8s_discovery_token_ca_cert_hash'] }} \
         --control-plane \
         --certificate-key {{ k8s_master_cert_key }}
+      become: true
 
     - name: Copying required files
       copy:
