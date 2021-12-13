@@ -97,7 +97,7 @@
     - name: Copying required files
       copy:
         src: '/etc/kubernetes/admin.conf'
-        dest:  '.kube/config'
+        dest:  '~{{ ansible_user }}/.kube/config'
         remote_src: yes
         owner: "{{ ansible_user }}"
       become: true
@@ -106,7 +106,6 @@
       template:
         src: "templates/{{ k8s_network_addon }}.yaml.j2"
         dest:  "kubernetes/{{ k8s_network_addon }}.yaml"
-        owner: "{{ ansible_user }}"
 
     - name: Install Network Add-on
       command: "kubectl apply -f kubernetes/{{ k8s_network_addon }}.yaml"
@@ -116,7 +115,6 @@
           copy:
             src: "files/{{ item }}"
             dest:  "kubernetes/{{ item }}"
-            owner: "{{ ansible_user }}"
           with_items:
             - "{{ k8s_dashboard_resources }}"
 
