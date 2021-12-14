@@ -195,6 +195,8 @@
         --control-plane \
         --certificate-key {{ k8s_master_cert_key }}
       become: true
+      when:
+        - k8s_node_join_status.stdout != "Ready"
 
     - name: Copying required files
       copy:
@@ -202,8 +204,6 @@
         dest:  '~{{ ansible_user }}/.kube/config'
         remote_src: yes
         owner: "{{ ansible_user }}"
-      when:
-        - k8s_node_join_status.stdout != "Ready"
       become: true
   when:
     - inventory_hostname != k8s_master_node
