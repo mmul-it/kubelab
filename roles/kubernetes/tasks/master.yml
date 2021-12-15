@@ -97,9 +97,9 @@
     - name: Copying required files
       copy:
         src: '/etc/kubernetes/admin.conf'
-        dest:  '~{{ ansible_user }}/.kube/config'
+        dest:  "~{{ lookup('env', 'USER') }}/.kube/config"
         remote_src: yes
-        owner: "{{ ansible_user }}"
+        owner: "{{ lookup('env', 'USER') }}"
       become: true
 
     - name: Deploying network addon template
@@ -201,9 +201,9 @@
     - name: Copying required files
       copy:
         src: '/etc/kubernetes/admin.conf'
-        dest:  '~{{ ansible_user }}/.kube/config'
+        dest:  "~{{ lookup('env', 'USER') }}/.kube/config"
         remote_src: yes
-        owner: "{{ ansible_user }}"
+        owner: "{{ lookup('env', 'USER') }}"
       become: true
   when:
     - inventory_hostname != k8s_master_node
