@@ -5,3 +5,4 @@
     name: docker
     state: restarted
     enabled: yes
+  become: true
