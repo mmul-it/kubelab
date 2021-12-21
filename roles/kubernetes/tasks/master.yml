@@ -97,9 +97,9 @@
     - name: Copying required files
       copy:
         src: '/etc/kubernetes/admin.conf'
-        dest:  "~{{ lookup('env', 'USER') }}/.kube/config"
+        dest:  "~{{ ansible_user_id }}/.kube/config"
         remote_src: yes
-        owner: "{{ lookup('env', 'USER') }}"
+        owner: "{{ ansible_user_id }}"
       become: true
 
     - name: Deploying network addon template
@@ -154,6 +154,7 @@
     - name: Get Token from Kubernetes
       shell: |
         set -o pipefail
+        if [ !$(kubeadm token list) ]; then kubeadm token create ; fi
         kubeadm token list | grep 'system:bootstrappers:kubeadm' | awk '{print $1}'
       register: k8s_token_output
       changed_when: false
@@ -201,9 +202,9 @@
     - name: Copying required files
       copy:
         src: '/etc/kubernetes/admin.conf'
-        dest:  "~{{ lookup('env', 'USER') }}/.kube/config"
+        dest:  "~{{ ansible_user_id }}/.kube/config"
         remote_src: yes
-        owner: "{{ lookup('env', 'USER') }}"
+        owner: "{{ ansible_user_id }}"
       become: true
   when:
     - inventory_hostname != k8s_master_node
