@@ -5,7 +5,6 @@
   template:
     src: "templates/ceph-csi-secret.yaml.j2"
     dest:  "kubernetes/ceph-csi-secret.yaml"
-    owner: "{{ lookup('env', 'USER') }}"
 
 - name: Check whether the secret is already defined
   command: kubectl get secret csi-rbd-secret -o jsonpath='{.metadata.name}'
@@ -24,7 +23,6 @@
   template:
     src: "templates/ceph-csi-config.yaml.j2"
     dest:  "kubernetes/ceph-csi-config.yaml"
-    owner: "{{ lookup('env', 'USER') }}"
 
 - name: Check whether the config map is already defined
   command: kubectl get configmap ceph-csi-config -o jsonpath='{.metadata.name}'
@@ -42,7 +40,6 @@
   template:
     src: "templates/ceph-csi-encryption-kms-config.yaml.j2"
     dest:  "kubernetes/ceph-csi-encryption-kms-config.yaml"
-    owner: "{{ lookup('env', 'USER') }}"
 
 - name: Check whether the Ceph CSI encryption KMS config map is already defined
   command: kubectl get configmap ceph-csi-encryption-kms-config -o jsonpath='{.metadata.name}'
@@ -111,7 +108,6 @@
   template:
     src: "templates/ceph-csi-storageclass.yaml.j2"
     dest:  "kubernetes/ceph-csi-storageclass.yaml"
-    owner: "{{ lookup('env', 'USER') }}"
 
 - name: Check whether the StorageClass is already defined
   command: kubectl get storageclass csi-rbd-sc -o jsonpath='{.metadata.name}'
