@@ -86,6 +86,7 @@ k8s_ceph_csi_provisioner_rbac_url: https://raw.githubusercontent.com/ceph/ceph-c
 k8s_ceph_csi_nodeplugin_rbac_url: https://raw.githubusercontent.com/ceph/ceph-csi/{{ k8s_ceph_csi_release }}/deploy/rbd/kubernetes/csi-nodeplugin-rbac.yaml
 k8s_ceph_csi_rbdplugin_provisioner_url: https://raw.githubusercontent.com/ceph/ceph-csi/{{ k8s_ceph_csi_release }}/deploy/rbd/kubernetes/csi-rbdplugin-provisioner.yaml
 k8s_ceph_csi_rbdplugin_url: https://raw.githubusercontent.com/ceph/ceph-csi/{{ k8s_ceph_csi_release }}/deploy/rbd/kubernetes/csi-rbdplugin.yaml
+k8s_ceph_csi_vol_expansion: false
 
 # Set this to true to force k8s cluster reset
 k8s_reset: false

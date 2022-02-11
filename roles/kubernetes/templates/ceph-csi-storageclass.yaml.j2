@@ -9,10 +9,14 @@ parameters:
    pool: {{ k8s_ceph_csi_pool }}
    monitors: {% for osd in k8s_ceph_csi_monitors %}{{ osd }}{% if not loop.last %},{% endif %}{% endfor %}
 
+   imageFeatures: layering
    csi.storage.k8s.io/provisioner-secret-name: csi-rbd-secret
    csi.storage.k8s.io/provisioner-secret-namespace: default
+   csi.storage.k8s.io/controller-expand-secret-name: csi-rbd-secret
+   csi.storage.k8s.io/controller-expand-secret-namespace: default
    csi.storage.k8s.io/node-stage-secret-name: csi-rbd-secret
    csi.storage.k8s.io/node-stage-secret-namespace: default
 reclaimPolicy: Delete
+allowVolumeExpansion: {{ k8s_ceph_csi_vol_expansion }}
 mountOptions:
    - discard
