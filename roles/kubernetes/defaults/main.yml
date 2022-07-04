@@ -1,19 +1,19 @@
 ---
 
-k8s_epel_enable: true
+k8s_epel_enable: "{{ ansible_distribution_major_version == '7' | bool }}"
+
+k8s_container_runtime: "{{ 'docker-ce' if ansible_distribution_major_version == '7' else 'containerd.io' }}"
 
 k8s_packages:
-  - yum-utils
-  - device-mapper-persistent-data
-  - lvm2
-  - vim
-  - docker-ce
   - kubeadm
   - kubectl
+  - "{{ k8s_container_runtime }}"
+
+k8s_container_service: "{{ 'docker' if ansible_distribution_major_version == '7' else 'containerd' }}"
 
 k8s_services:
-  - docker
   - kubelet
+  - "{{ k8s_container_service }}"
 
 # The main master node from which all will be driven
 k8s_master_node: kubernetes-1

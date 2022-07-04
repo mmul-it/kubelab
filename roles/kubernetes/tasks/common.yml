@@ -29,6 +29,14 @@
     state: present
     reload: yes
 
+- name: Enable /proc/sys/net/ipv4/ip_forward
+  sysctl:
+    name: net.ipv4.ip_forward
+    value: 1
+    sysctl_set: yes
+    state: present
+    reload: yes
+
 - name: "Build hosts file"
   lineinfile:
     dest: /etc/hosts
@@ -48,7 +56,7 @@
   yum_repository:
     name: docker-ce
     description: Docker-CE
-    baseurl: 'https://download.docker.com/linux/centos/7/$basearch/stable'
+    baseurl: "https://download.docker.com/linux/centos/{{ ansible_distribution_major_version }}/$basearch/stable"
     enabled: yes
     gpgcheck: yes
     repo_gpgcheck: yes
@@ -80,6 +88,16 @@
    name: "{{ k8s_packages }}"
    state: present
 
+- name: Remove 'cri' from disabled plugins in /etc/containerd/config.toml
+  replace:
+    path: /etc/containerd/config.toml
+    regexp: '^disabled_plugins(.*)'
+    replace: '#disabled_plugins\1'
+  when:
+    - k8s_container_runtime == 'containerd'
+  notify:
+    - restart containerd daemon
+
 - name: Starting and Enabling the required services
   service:
    name: "{{ item }}"
@@ -94,6 +112,7 @@
     dest: /etc/docker/daemon.json
     src: docker_daemon.json.j2
   when:
+    - k8s_container_runtime == 'docker'
     - k8s_docker_daemon_options is defined
   notify: restart docker daemon
 

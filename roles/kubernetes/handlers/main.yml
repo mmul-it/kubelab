@@ -6,3 +6,10 @@
     state: restarted
     enabled: yes
   become: true
+
+- name: restart containerd daemon
+  service:
+    name: containerd
+    state: restarted
+    enabled: yes
+  become: true
