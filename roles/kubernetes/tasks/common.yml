@@ -67,6 +67,11 @@
     repo_gpgcheck: yes
     gpgkey: 'https://download.docker.com/linux/centos/gpg'
 
+- name: Adding Docker-CE repo keys
+  rpm_key:
+    state: present
+    key: 'https://download.docker.com/linux/centos/gpg'
+
 - name: Adding Kubernetes repo
   yum_repository:
     name: kubernetes
@@ -79,12 +84,11 @@
       - 'https://packages.cloud.google.com/yum/doc/yum-key.gpg'
       - 'https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg'
 
-- name: Adding Repo keys
+- name: Adding Kubernetes repo keys
   rpm_key:
     state: present
     key: "{{ item }}"
   with_items:
-    - 'https://download.docker.com/linux/centos/gpg'
     - 'https://packages.cloud.google.com/yum/doc/yum-key.gpg'
     - 'https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg'
 
@@ -99,7 +103,7 @@
     regexp: '^disabled_plugins(.*)'
     replace: '#disabled_plugins\1'
   when:
-    - k8s_container_runtime == 'containerd'
+    - k8s_container_service == 'containerd'
   notify:
     - restart containerd daemon
 
@@ -117,7 +121,7 @@
     dest: /etc/docker/daemon.json
     src: docker_daemon.json.j2
   when:
-    - k8s_container_runtime == 'docker'
+    - k8s_container_service == 'docker'
     - k8s_docker_daemon_options is defined
   notify: restart docker daemon
 
