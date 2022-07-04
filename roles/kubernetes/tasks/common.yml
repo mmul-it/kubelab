@@ -21,6 +21,11 @@
     name: br_netfilter
     state: present
 
+- name: Persist br_netfilter after reboots
+  copy:
+    dest: /etc/modules-load.d/br_netfilter.conf
+    content: "br_netfilter"
+
 - name: Enable /proc/sys/net/bridge/bridge-nf-call-iptables
   sysctl:
     name: net.bridge.bridge-nf-call-iptables
