@@ -203,6 +203,14 @@
       when:
         - k8s_role is defined
 
+    - name: Enable IPIP protocol when using Calico
+      firewalld:
+        rich_rule: rule protocol value="ipip" accept
+        permanent: yes
+        state: enabled
+      when:
+        - k8s_network_addon == 'calico'
+
     - name: Enabling Bridge Firewall Rule
       sysctl:
         name: net.bridge.bridge-nf-call-iptables
