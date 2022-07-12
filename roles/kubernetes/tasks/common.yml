@@ -144,12 +144,14 @@
             masquerade: yes
             state: enabled
             permanent: yes
+            immediate: yes
 
         - name: Enable VRRP protocol for multi master setup
           firewalld:
             rich_rule: rule protocol value="vrrp" accept
-            permanent: yes
             state: enabled
+            permanent: yes
+            immediate: yes
           when:
             - k8s_role is defined
             - k8s_role == 'master'
@@ -206,8 +208,9 @@
     - name: Enable IPIP protocol when using Calico
       firewalld:
         rich_rule: rule protocol value="ipip" accept
-        permanent: yes
         state: enabled
+        permanent: yes
+        immediate: yes
       when:
         - k8s_network_addon == 'calico'
 
