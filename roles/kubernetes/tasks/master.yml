@@ -104,7 +104,7 @@
 
     - name: Deploying network addon template
       template:
-        src: "templates/{{ k8s_network_addon }}.yaml.j2"
+        src: "templates/network-addons/{{ k8s_network_addon }}.yaml.j2"
         dest:  "kubernetes/{{ k8s_network_addon }}.yaml"
 
     - name: Install Network Add-on

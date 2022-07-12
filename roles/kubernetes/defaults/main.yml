@@ -59,14 +59,14 @@ k8s_nodeport_ports:
 k8s_firewalld_enable: true
 
 k8s_network_cidr: 172.16.0.0/16
+
+# Calico addon
 k8s_network_addon: calico
 k8s_network_calico_ip_autodetection_method: 'interface=eth*'
-
 k8s_network_addon_ports:
   - 179/tcp
   - 4789/udp
   - 5473/tcp
-  - 4789/udp
 
 # Enable if you need to change Docker native cgroup, that in CentOS 7 is cgroupfs
 #k8s_docker_native_cgroupdriver: 'systemd'
