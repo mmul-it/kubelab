@@ -71,6 +71,8 @@
   rpm_key:
     state: present
     key: 'https://download.docker.com/linux/centos/gpg'
+  retries: 5
+  delay: 5
 
 - name: Adding Kubernetes repo
   yum_repository:
@@ -91,6 +93,8 @@
   with_items:
     - 'https://packages.cloud.google.com/yum/doc/yum-key.gpg'
     - 'https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg'
+  retries: 5
+  delay: 5
 
 - name: Installing required packages
   yum:
