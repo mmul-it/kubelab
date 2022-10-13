@@ -1,0 +1,26 @@
+---
+
+- name: Enable strictARP inside kube-system
+  shell: |
+    kubectl get configmap kube-proxy -n kube-system -o yaml | \
+    sed -e "s/strictARP: false/strictARP: true/" | \
+    kubectl apply -f - -n kube-system
+
+- name: Deploy MetalLB
+  command: kubectl apply -f {{ k8s_metallb_url }}
+
+- name: Get MetalLB controller pod ID
+  command: kubectl -n metallb-system get pods -l component=controller -o name
+  register: k8s_metallb_controller_pod
+
+- name: Wait for Metallb controller to come up
+  command: kubectl -n metallb-system wait --for=condition=Ready=True --timeout=600s {{ k8s_metallb_controller_pod.stdout }}
+  timeout: 600
+
+- name: Deploy MetalLB pool files
+  template:
+    src: "templates/metallb-pools.yaml.j2"
+    dest:  "kubernetes/metallb-pools.yaml"
+
+- name: Create MetalLB pool resources
+  command: kubectl apply -f kubernetes/metallb-pools.yaml
