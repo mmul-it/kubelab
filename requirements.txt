@@ -1,4 +1,3 @@
-ansible==2.10.7
+ansible
 ansible-vault
-cryptography==3.3.2
-azure-cli==2.25.0
+azure-cli
