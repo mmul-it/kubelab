@@ -1,26 +1,55 @@
 ---
 
+- name: Check strictARP inside kube-system status
+  shell: |
+    kubectl get configmap kube-proxy -n kube-system -o yaml | \
+    sed -e "s/strictARP: false/strictARP: true/" | \
+    kubectl diff -f - -n kube-system
+  register: k8s_metallb_strictarp_check
+  changed_when: false
+  failed_when: false
+
 - name: Enable strictARP inside kube-system
   shell: |
     kubectl get configmap kube-proxy -n kube-system -o yaml | \
     sed -e "s/strictARP: false/strictARP: true/" | \
     kubectl apply -f - -n kube-system
+  when:
+    - k8s_metallb_strictarp_check.rc != 0
+
+- name: Check MetalLB deployment
+  command: kubectl diff -f {{ k8s_metallb_url }}
+  register: k8s_metallb_deploy_check
+  changed_when: false
+  failed_when: false
 
 - name: Deploy MetalLB
   command: kubectl apply -f {{ k8s_metallb_url }}
+  when:
+    - k8s_metallb_deploy_check.rc != 0
 
 - name: Get MetalLB controller pod ID
   command: kubectl -n metallb-system get pods -l component=controller -o name
   register: k8s_metallb_controller_pod
+  changed_when: false
 
 - name: Wait for Metallb controller to come up
   command: kubectl -n metallb-system wait --for=condition=Ready=True --timeout=600s {{ k8s_metallb_controller_pod.stdout }}
   timeout: 600
+  changed_when: false
 
-- name: Deploy MetalLB pool files
+- name: Deploy MetalLB pools file
   template:
     src: "templates/metallb-pools.yaml.j2"
     dest:  "kubernetes/metallb-pools.yaml"
 
+- name: Check MetalLB pools
+  command: kubectl diff -f kubernetes/metallb-pools.yaml
+  register: k8s_metallb_pools_check
+  changed_when: false
+  failed_when: false
+  
 - name: Create MetalLB pool resources
   command: kubectl apply -f kubernetes/metallb-pools.yaml
+  when:
+    - k8s_metallb_pools_check.rc != 0
