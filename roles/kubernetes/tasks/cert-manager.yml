@@ -1,0 +1,20 @@
+---
+
+- name: Deploy Cert Manager
+  command: kubectl apply -f {{ k8s_cert_manager_url }}
+
+- name: Get Cert Manager controller pod ID
+  command: kubectl -n cert-manager get pods -l app.kubernetes.io/component=controller -o name
+  register: k8s_cert_manager_controller_pod
+
+- name: Wait for Cert Manager controller to come up
+  command: kubectl -n cert-manager wait --for=condition=Ready=True --timeout=600s {{ k8s_cert_manager_controller_pod.stdout }}
+  timeout: 600
+
+- name: Deploy Cert Manager Issuers file
+  template:
+    src: "templates/cert-manager-issuers.yaml.j2"
+    dest:  "kubernetes/cert-manager-issuers.yaml"
+
+- name: Create Cert Manager Issuers
+  command: kubectl apply -f kubernetes/cert-manager-issuers.yaml

@@ -1,0 +1,14 @@
+{% for k8s_cert_manager_issuer in k8s_cert_manager_issuers: %}
+---
+apiVersion: cert-manager.io/v1
+kind: {% if k8s_cert_manager_issuer.cluster|bool %}
+ClusterIssuer
+{% else %}
+Issuer
+{% endif %}
+metadata:
+  name: letsencrypt
+spec:
+  acme:
+    {{ k8s_cert_manager_issuer.acme|to_yaml|indent }}
+{% endfor %}
