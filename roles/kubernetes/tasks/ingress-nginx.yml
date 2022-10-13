@@ -1,0 +1,18 @@
+---
+
+- name: Deploy Ingress NGINX
+  command: kubectl apply -f {{ k8s_ingress_nginx_url }}
+
+- name: Get Ingress NGINX controller pod ID
+  command: kubectl -n ingress-nginx get pods -l app.kubernetes.io/component=controller -o name
+  register: k8s_ingress_nginx_controller_pod
+
+- name: Wait for Ingress NGINX controller to come up
+  command: kubectl -n ingress-nginx wait --for=condition=Ready=True --timeout=600s {{ k8s_ingress_nginx_controller_pod.stdout }}
+  timeout: 600
+
+- name: Expose Ingress NGINX controller via LoadBalancer
+  command: kubectl -n ingress-nginx expose deployment ingress-nginx-controller --type=LoadBalancer --name={{ item.name }} --load-balancer-ip={{ item.ip }}
+  with_items: "{{ k8s_ingress_nginx_lb_services }}"
+  when:
+    - k8s_ingress_nginx_lb_services|length > 0
