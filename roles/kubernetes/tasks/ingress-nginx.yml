@@ -11,8 +11,7 @@
   command: kubectl -n ingress-nginx wait --for=condition=Ready=True --timeout=600s {{ k8s_ingress_nginx_controller_pod.stdout }}
   timeout: 600
 
-- name: Expose Ingress NGINX controller via LoadBalancer
-  command: kubectl -n ingress-nginx expose deployment ingress-nginx-controller --type=LoadBalancer --name={{ item.name }} --load-balancer-ip={{ item.ip }}
-  with_items: "{{ k8s_ingress_nginx_lb_services }}"
+- include_tasks: ingress-nginx-services.yml
+  loop: "{{ k8s_ingress_nginx_lb_services }}"
   when:
     - k8s_ingress_nginx_lb_services|length > 0

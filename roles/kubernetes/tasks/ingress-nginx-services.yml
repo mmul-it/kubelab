@@ -1,0 +1,13 @@
+# Create services just if they don't exists already
+---
+
+- name: Check for Ingress NGINX controller LoadBalancer exposition
+  command: kubectl -n ingress-nginx get service {{ item.name }}
+  register: k8s_ingress_nginx_lb_service_exists
+  changed_when: false
+  failed_when: false
+
+- name: Expose Ingress NGINX controller via LoadBalancer
+  command: kubectl -n ingress-nginx expose deployment ingress-nginx-controller --type=LoadBalancer --name={{ item.name }} --load-balancer-ip={{ item.ip }}
+  when:
+    - k8s_ingress_nginx_lb_service_exists.rc != 0
