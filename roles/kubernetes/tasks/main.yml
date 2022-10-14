@@ -8,36 +8,36 @@
     - k8s_role is defined
     - k8s_role == 'master'
 
-- import_tasks: worker.yml
-  when:
-    - k8s_role is defined
-    - k8s_role == 'worker'
-
-- block:
-    - include_tasks: users.yml
-      with_items:
-        - "{{ k8s_users }}"
-      loop_control:
-        loop_var: k8s_user
-      when:
-        - k8s_users is defined
-    
-    - include_tasks: ceph-csi.yml
-      when:
-        - k8s_ceph_csi_enable|bool
-    
-    - include_tasks: metallb.yml
-      when:
-        - k8s_metallb_enable|bool
-    
-    - include_tasks: ingress-nginx.yml
-      when:
-        - k8s_ingress_nginx_enable|bool
-    
-    - include_tasks: cert-manager.yml
-      when:
-        - k8s_cert_manager_enable|bool
-  when:
-    - k8s_role is defined
-    - k8s_role == 'master'
-    - inventory_hostname == k8s_master_node
+#- import_tasks: worker.yml
+#  when:
+#    - k8s_role is defined
+#    - k8s_role == 'worker'
+#
+#- block:
+#    - include_tasks: users.yml
+#      with_items:
+#        - "{{ k8s_users }}"
+#      loop_control:
+#        loop_var: k8s_user
+#      when:
+#        - k8s_users is defined
+#    
+#    - include_tasks: ceph-csi.yml
+#      when:
+#        - k8s_ceph_csi_enable|bool
+#    
+#    - include_tasks: metallb.yml
+#      when:
+#        - k8s_metallb_enable|bool
+#    
+#    - include_tasks: ingress-nginx.yml
+#      when:
+#        - k8s_ingress_nginx_enable|bool
+#    
+#    - include_tasks: cert-manager.yml
+#      when:
+#        - k8s_cert_manager_enable|bool
+#  when:
+#    - k8s_role is defined
+#    - k8s_role == 'master'
+#    - inventory_hostname == k8s_master_node

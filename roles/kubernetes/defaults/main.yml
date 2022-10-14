@@ -1,5 +1,7 @@
 ---
 
+k8s_local_workdir: "~/kubernetes"
+
 k8s_epel_enable: "{{ ansible_distribution_major_version == '7' | bool }}"
 
 k8s_container_runtime: "{{ 'docker-ce' if ansible_distribution_major_version == '7' else 'containerd.io' }}"
