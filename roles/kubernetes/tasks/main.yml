@@ -8,11 +8,11 @@
     - k8s_role is defined
     - k8s_role == 'master'
 
-#- import_tasks: worker.yml
-#  when:
-#    - k8s_role is defined
-#    - k8s_role == 'worker'
-#
+- import_tasks: worker.yml
+  when:
+    - k8s_role is defined
+    - k8s_role == 'worker'
+
 #- block:
 #    - include_tasks: users.yml
 #      with_items:

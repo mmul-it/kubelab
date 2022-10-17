@@ -6,12 +6,7 @@
     - k8s_reset|bool
   become: true
 
-- name: "Check node join status"
-  command: kubectl get nodes {{ ansible_fqdn }} -o jsonpath='{.status.conditions[?(@.reason == "KubeletReady")].type}'
-  register: k8s_node_join_status
-  changed_when: false
-  failed_when: false
-  delegate_to: "{{ k8s_master_node }}"
+- import_tasks: node_status.yml
 
 - name: Joining worker nodes
   block:
@@ -28,5 +23,5 @@
       --discovery-token-ca-cert-hash sha256:{{ hostvars[k8s_master_node]['k8s_discovery_token_ca_cert_hash'] }}
     when: k8s_multi_master | bool
   when:
-    - k8s_node_join_status.stdout != "Ready"
+    - k8s_node_status != 'Ready'
   become: true
