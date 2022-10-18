@@ -34,9 +34,9 @@
       when:
         - k8s_ingress_nginx_enable|bool
 
-#    - include_tasks: cert-manager.yml
-#      when:
-#        - k8s_cert_manager_enable|bool
+    - include_tasks: cert-manager.yml
+      when:
+        - k8s_cert_manager_enable|bool
   when:
     - k8s_role is defined
     - k8s_role == 'master'
