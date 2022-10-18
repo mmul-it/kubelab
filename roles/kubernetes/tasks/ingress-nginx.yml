@@ -1,27 +1,28 @@
 ---
 
-- name: Check Ingress NGINX deployment
-  command: kubectl diff -f {{ k8s_ingress_nginx_url }}
-  register: k8s_ingress_nginx_deploy_check
-  changed_when: false
-  failed_when: false
+- name: Get Ingress NGINX deployment yaml
+  local_action:
+    module: get_url
+    url: "{{ k8s_ingress_nginx_url }}"
+    dest: "{{ k8s_local_workdir }}/ingress-nginx.yaml"
+    mode: '0664'
 
-- name: Deploy Ingress NGINX
-  command: kubectl apply -f {{ k8s_ingress_nginx_url }}
-  when:
-    - k8s_ingress_nginx_deploy_check.rc != 0
+- name: Create Ingress NGINX deployment
+  local_action:
+    module: kubernetes.core.k8s
+    kubeconfig: "{{ k8s_kubeconfig }}"
+    state: present
+    src: "{{ k8s_local_workdir }}/ingress-nginx.yaml"
 
-- name: Get Ingress NGINX controller pod ID
-  command: kubectl -n ingress-nginx get pods -l app.kubernetes.io/component=controller -o name
-  register: k8s_ingress_nginx_controller_pod
-  changed_when: false
+- name: Deploy Ingress NGINX services yaml
+  local_action:
+    module: template
+    src: "templates/ingress-nginx-services.yaml.j2"
+    dest:  "{{ k8s_local_workdir }}/ingress-nginx-services.yaml"
 
-- name: Wait for Ingress NGINX controller to come up
-  command: kubectl -n ingress-nginx wait --for=condition=Ready=True --timeout=600s {{ k8s_ingress_nginx_controller_pod.stdout }}
-  timeout: 600
-  changed_when: false
-
-- include_tasks: ingress-nginx-services.yml
-  loop: "{{ k8s_ingress_nginx_lb_services }}"
-  when:
-    - k8s_ingress_nginx_lb_services|length > 0
+- name: Create Ingress NGINX services resources
+  local_action:
+    module: kubernetes.core.k8s
+    kubeconfig: "{{ k8s_kubeconfig }}"
+    state: present
+    src: "{{ k8s_local_workdir }}/ingress-nginx-services.yaml"

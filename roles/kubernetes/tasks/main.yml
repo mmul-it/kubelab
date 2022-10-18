@@ -30,10 +30,10 @@
       when:
         - k8s_metallb_enable|bool
 
-#    - include_tasks: ingress-nginx.yml
-#      when:
-#        - k8s_ingress_nginx_enable|bool
-#
+    - include_tasks: ingress-nginx.yml
+      when:
+        - k8s_ingress_nginx_enable|bool
+
 #    - include_tasks: cert-manager.yml
 #      when:
 #        - k8s_cert_manager_enable|bool
