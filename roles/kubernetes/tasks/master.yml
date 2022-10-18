@@ -20,7 +20,7 @@
         k8s_kubeconfig: "{{ k8s_local_workdir }}/admin.conf"
   run_once: true
 
-- name: Resetting Kubernetes master node
+- name: Reset Kubernetes master node
   command: kubeadm reset -f
   when:
     - k8s_reset|bool
@@ -48,7 +48,7 @@
         - haproxy
         - keepalived
 
-    - name: Creating haproxy.cfg file
+    - name: Create haproxy.cfg file
       template:
         src: haproxy.cfg.j2
         dest: /usr/local/etc/haproxy/haproxy.cfg
@@ -56,7 +56,7 @@
         group: root
         mode: 0644
 
-    - name: Creating keepalived.conf file
+    - name: Create keepalived.conf file
       template:
         src: keepalived.conf.j2
         dest: /usr/local/etc/keepalived/keepalived.conf
@@ -64,7 +64,7 @@
         group: root
         mode: 0644
 
-    - name: Creating pod configurations"
+    - name: Create pod configurations"
       template:
         src: "{{ item }}_pod.yaml.j2"
         dest: "/etc/kubernetes/manifests/{{ item }}.yaml"
@@ -75,7 +75,7 @@
         - haproxy
         - keepalived
 
-    - name: Creating keepalived check script
+    - name: Create keepalived check script
       template:
         src: templates/check_apiserver.sh.j2
         dest: /usr/local/etc/keepalived/check_apiserver.sh
@@ -86,12 +86,12 @@
   when:
     - k8s_multi_master | bool
 
-- name: Setting up the master node
+- name: Set up the master node
   block:
     - name: Pulling images required for setting up a Kubernetes cluster
       command: kubeadm config images pull
 
-    - name: Initializing Kubernetes cluster
+    - name: Initialize Kubernetes cluster
       command: |
         kubeadm init \
         --control-plane-endpoint {{ k8s_control_plane_endpoint }} \
@@ -104,7 +104,7 @@
     - k8s_node_status != "Ready"
     - inventory_hostname == k8s_master_node
 
-- name: Copying remote /etc/kubernetes/admin.conf on local directory
+- name: Copy remote /etc/kubernetes/admin.conf on local directory
   fetch:
     src: '/etc/kubernetes/admin.conf'
     dest: "{{ k8s_local_workdir }}/"
@@ -113,7 +113,7 @@
   when:
     - inventory_hostname == k8s_master_node
 
-- name: Deploying network addon template
+- name: Deploy network addon template
   local_action:
     module: template
     src: "templates/network-addons/{{ k8s_network_addon }}.yaml.j2"
@@ -136,7 +136,7 @@
         dest: "{{ k8s_local_workdir }}/dashboard.yaml"
         mode: '0664'
 
-    - name: Deploying dashboard templates
+    - name: Deploy dashboard templates
       local_action:
         module: copy
         src: "files/{{ item }}"
@@ -144,12 +144,12 @@
       with_items:
         - "{{ k8s_dashboard_resources }}"
 
-    - name: Creating Kubernetes Dashboard access resources
+    - name: Create Kubernetes Dashboard resources
       local_action:
         module: kubernetes.core.k8s
         kubeconfig: "{{ k8s_kubeconfig }}"
         state: present
-        serc: "{{ k8s_local_workdir }}/{{ item }}"
+        src: "{{ k8s_local_workdir }}/{{ item }}"
       with_items:
         - "dashboard.yaml"
         - "{{ k8s_dashboard_resources }}"
@@ -188,7 +188,7 @@
   when:
     - inventory_hostname == k8s_master_node
 
-- name: Joining control-plane nodes with kubernetes master
+- name: Join control-plane nodes with kubernetes master
   command: |
     kubeadm join {{ k8s_control_plane_endpoint }} \
     --token {{ hostvars[k8s_master_node]['k8s_token'] }} \
