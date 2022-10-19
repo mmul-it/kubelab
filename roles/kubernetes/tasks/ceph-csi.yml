@@ -9,6 +9,7 @@
 - name: Create Ceph CSI namespace
   local_action:
     module: kubernetes.core.k8s
+    kubeconfig: "{{ k8s_kubeconfig }}"
     kind: Namespace
     name: "{{ k8s_ceph_csi_namespace }}"
     state: present

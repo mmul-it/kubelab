@@ -6,6 +6,14 @@
     path: "{{ k8s_local_workdir }}/ingress-nginx"
     state: directory
 
+- name: Create Ingress NGINX namespace
+  local_action:
+    module: kubernetes.core.k8s
+    kubeconfig: "{{ k8s_kubeconfig }}"
+    kind: Namespace
+    name: "{{ k8s_ingress_nginx_namespace }}"
+    state: present
+
 - include_tasks: create-resource-from-template.yml
   with_items:
     # Ingress NGINX deployment
