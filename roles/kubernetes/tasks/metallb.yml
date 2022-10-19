@@ -29,6 +29,6 @@
 - include_tasks: create-resource-from-template.yml
   with_items:
     # MetalLB deployment
-    - metallb/metallb-deployment
+    - name: metallb/metallb-deployment
     # MetalLB pools
-    - metallb/metallb-pools
+    - name: metallb/metallb-pools

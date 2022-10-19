@@ -9,6 +9,7 @@
 - include_tasks: create-resource-from-template.yml
   with_items:
     # Ingress NGINX deployment
-    - ingress-nginx/ingress-nginx-deployment
+    - name: ingress-nginx/ingress-nginx-deployment
+      wait: false
     # Ingress NGINX services
-    - ingress-nginx/ingress-nginx-services
+    - name: ingress-nginx/ingress-nginx-services

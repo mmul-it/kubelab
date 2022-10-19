@@ -9,6 +9,6 @@
 - include_tasks: create-resource-from-template.yml
   with_items:
     # Cert Manager deployment
-    - cert-manager/cert-manager-deployment
+    - name: cert-manager/cert-manager-deployment
     # Cert Manager issuers
-    - cert-manager/cert-manager-issuer
+    - name: cert-manager/cert-manager-issuers

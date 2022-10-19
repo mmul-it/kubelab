@@ -16,18 +16,18 @@
 - include_tasks: create-resource-from-template.yml
   with_items:
     # Ceph CSI RBD secret yaml
-    - ceph-csi/ceph-csi-secret
+    - name: ceph-csi/ceph-csi-secret
     # Ceph CSI ConfigMap
-    - ceph-csi/ceph-csi-config
+    - name: ceph-csi/ceph-csi-config
     # Ceph CSI encryption KMS ConfigMap
-    - ceph-csi/ceph-csi-encryption-kms-config
+    - name: ceph-csi/ceph-csi-encryption-kms-config
     # Ceph CSI RBAC provisioner
-    - ceph-csi/ceph-csi-provisioner-rbac
+    - name: ceph-csi/ceph-csi-provisioner-rbac
     # Ceph CSI RBAC node plugin
-    - ceph-csi/ceph-csi-nodeplugin-rbac
+    - name: ceph-csi/ceph-csi-nodeplugin-rbac
     # Ceph CSI RBD plugin provisioner deployment
-    - ceph-csi/ceph-csi-rbdplugin-provisioner
+    - name: ceph-csi/ceph-csi-rbdplugin-provisioner
     # Ceph CSI RBD plugin
-    - ceph-csi/ceph-csi-rbdplugin
+    - name: ceph-csi/ceph-csi-rbdplugin
     # Ceph CSI StorageClass
-    - ceph-csi/ceph-csi-storageclass
+    - name: ceph-csi/ceph-csi-storageclass
