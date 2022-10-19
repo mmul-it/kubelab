@@ -15,3 +15,4 @@
     state: present
     src: "{{ k8s_local_workdir }}/{{ item }}.yaml"
     wait: true
+    wait_timeout: "{{ k8s_wait_timeout }}"
