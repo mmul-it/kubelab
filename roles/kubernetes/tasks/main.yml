@@ -1,4 +1,5 @@
 ---
+
 - import_tasks: common.yml
   become: true
 
@@ -13,14 +14,10 @@
     - k8s_role == 'worker'
 
 - block:
-#    - include_tasks: users.yml
-#      with_items:
-#        - "{{ k8s_users }}"
-#      loop_control:
-#        loop_var: k8s_user
-#      when:
-#        - k8s_users is defined
-#
+    - include_tasks: users.yml
+      when:
+        - k8s_users is defined
+
     - include_tasks: ceph-csi.yml
       when:
         - k8s_ceph_csi_enable|bool

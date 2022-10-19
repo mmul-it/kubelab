@@ -1,3 +1,4 @@
+{% for k8s_user in k8s_users: %}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -14,3 +15,4 @@ roleRef:
   kind: Role # This must be Role or ClusterRole
   name: {{ k8s_user.role_name }} # This must match the name of the Role or ClusterRole you wish to bind to
   apiGroup: ""
+{% endfor %}
