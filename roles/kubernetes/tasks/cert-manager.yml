@@ -1,30 +1,14 @@
 ---
 
-- name: Get Cert Manager deployment yaml
+- name: Create Cert Manager local folder
   local_action:
-    module: get_url
-    url: "{{ k8s_cert_manager_url }}"
-    dest: "{{ k8s_local_workdir }}/cert-manager.yaml"
-    mode: '0664'
+    module: ansible.builtin.file
+    path: "{{ k8s_local_workdir }}/cert-manager"
+    state: directory
 
-- name: Create Cert Manager deployment
-  local_action:
-    module: kubernetes.core.k8s
-    kubeconfig: "{{ k8s_kubeconfig }}"
-    state: present
-    src: "{{ k8s_local_workdir }}/cert-manager.yaml"
-    wait: yes
-    wait_timeout: "{{ k8s_wait_timeout }}"
-
-- name: Deploy Cert Manager issuers yaml
-  local_action:
-    module: template
-    src: "templates/cert-manager-issuers.yaml.j2"
-    dest:  "{{ k8s_local_workdir }}/cert-manager-issuers.yaml"
-
-- name: Create Cert Manager issuers resources
-  local_action:
-    module: kubernetes.core.k8s
-    kubeconfig: "{{ k8s_kubeconfig }}"
-    state: present
-    src: "{{ k8s_local_workdir }}/metallb-pools.yaml"
+- include_tasks: create-resource-from-template.yml
+  with_items:
+    # Cert Manager deployment
+    - cert-manager/cert-manager-deployment
+    # Cert Manager issuers
+    - cert-manager/cert-manager-issuer

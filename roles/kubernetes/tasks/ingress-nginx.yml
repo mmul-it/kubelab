@@ -1,28 +1,14 @@
 ---
 
-- name: Get Ingress NGINX deployment yaml
+- name: Create ingress-nginx local folder
   local_action:
-    module: get_url
-    url: "{{ k8s_ingress_nginx_url }}"
-    dest: "{{ k8s_local_workdir }}/ingress-nginx.yaml"
-    mode: '0664'
+    module: ansible.builtin.file
+    path: "{{ k8s_local_workdir }}/ingress-nginx"
+    state: directory
 
-- name: Create Ingress NGINX deployment
-  local_action:
-    module: kubernetes.core.k8s
-    kubeconfig: "{{ k8s_kubeconfig }}"
-    state: present
-    src: "{{ k8s_local_workdir }}/ingress-nginx.yaml"
-
-- name: Deploy Ingress NGINX services yaml
-  local_action:
-    module: template
-    src: "templates/ingress-nginx-services.yaml.j2"
-    dest:  "{{ k8s_local_workdir }}/ingress-nginx-services.yaml"
-
-- name: Create Ingress NGINX services resources
-  local_action:
-    module: kubernetes.core.k8s
-    kubeconfig: "{{ k8s_kubeconfig }}"
-    state: present
-    src: "{{ k8s_local_workdir }}/ingress-nginx-services.yaml"
+- include_tasks: create-resource-from-template.yml
+  with_items:
+    # Ingress NGINX deployment
+    - ingress-nginx/ingress-nginx-deployment
+    # Ingress NGINX services
+    - ingress-nginx/ingress-nginx-services

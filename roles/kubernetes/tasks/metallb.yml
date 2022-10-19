@@ -1,5 +1,11 @@
 ---
 
+- name: Create MetalLB local folder
+  local_action:
+    module: ansible.builtin.file
+    path: "{{ k8s_local_workdir }}/metallb"
+    state: directory
+
 - name: Fetch kube-proxy configMap in kube-system namespace
   local_action:
     module: kubernetes.core.k8s
@@ -20,31 +26,9 @@
     definition: "{{ k8s_kube_proxy_configmap_strictARP_true }}"
     state: present
 
-- name: Get MetalLB deployment yaml
-  local_action:
-    module: get_url
-    url: "{{ k8s_metallb_url }}"
-    dest: "{{ k8s_local_workdir }}/metallb.yaml"
-    mode: '0664'
-
-- name: Create MetalLB deployment
-  local_action:
-    module: kubernetes.core.k8s
-    kubeconfig: "{{ k8s_kubeconfig }}"
-    state: present
-    src: "{{ k8s_local_workdir }}/metallb.yaml"
-    wait: yes
-    wait_timeout: "{{ k8s_wait_timeout }}"
-
-- name: Deploy MetalLB pools yaml
-  local_action:
-    module: template
-    src: "templates/metallb-pools.yaml.j2"
-    dest:  "{{ k8s_local_workdir }}/metallb-pools.yaml"
-
-- name: Create MetalLB pools resources
-  local_action:
-    module: kubernetes.core.k8s
-    kubeconfig: "{{ k8s_kubeconfig }}"
-    state: present
-    src: "{{ k8s_local_workdir }}/metallb-pools.yaml"
+- include_tasks: create-resource-from-template.yml
+  with_items:
+    # MetalLB deployment
+    - metallb/metallb-deployment
+    # MetalLB pools
+    - metallb/metallb-pools
