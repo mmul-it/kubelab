@@ -1,122 +1,33 @@
 ---
 
-# Ceph CSI Secret
-- name: Deploy CSI RBD secret yaml
-  template:
-    src: "templates/ceph-csi-secret.yaml.j2"
-    dest:  "kubernetes/ceph-csi-secret.yaml"
+- name: Create Ceph CSI local folder
+  local_action:
+    module: ansible.builtin.file
+    path: "{{ k8s_local_workdir }}/ceph-csi"
+    state: directory
 
-- name: Check whether the secret is already defined
-  command: kubectl get secret csi-rbd-secret -o jsonpath='{.metadata.name}'
-  register: k8s_ceph_csi_secret
-  changed_when: false
-  failed_when: false
+- name: Create Ceph CSI namespace
+  local_action:
+    module: kubernetes.core.k8s
+    kind: Namespace
+    name: "{{ k8s_ceph_csi_namespace }}"
+    state: present
 
-- name: Create the CSI RBD secret from yaml
-  shell: |
-    kubectl apply -f kubernetes/ceph-csi-secret.yaml
-  when:
-    - k8s_ceph_csi_secret.rc != 0
-
-# Ceph CSI ConfigMap
-- name: Deploy Ceph CSI config map yaml
-  template:
-    src: "templates/ceph-csi-config.yaml.j2"
-    dest:  "kubernetes/ceph-csi-config.yaml"
-
-- name: Check whether the config map is already defined
-  command: kubectl get configmap ceph-csi-config -o jsonpath='{.metadata.name}'
-  register: k8s_ceph_csi_config
-  changed_when: false
-  failed_when: false
-
-- name: Create the CSI RBD config map from yaml
-  shell: |
-    kubectl apply -f kubernetes/ceph-csi-config.yaml
-  when:
-    - k8s_ceph_csi_config.rc != 0
-
-- name: Deploy Ceph CSI encryption KMS config map yaml
-  template:
-    src: "templates/ceph-csi-encryption-kms-config.yaml.j2"
-    dest:  "kubernetes/ceph-csi-encryption-kms-config.yaml"
-
-- name: Check whether the Ceph CSI encryption KMS config map is already defined
-  command: kubectl get configmap ceph-csi-encryption-kms-config -o jsonpath='{.metadata.name}'
-  register: k8s_ceph_csi_encryption_kms_config
-  changed_when: false
-  failed_when: false
-
-- name: Create the Ceph CSI encryption KMS config map config map from yaml
-  shell: |
-    kubectl apply -f kubernetes/ceph-csi-encryption-kms-config.yaml
-  when:
-    - k8s_ceph_csi_encryption_kms_config.rc != 0
-
-# Ceph CSI RBAC provisioner and nodeplugin
-- name: Check whether the Ceph CSI provisioner RBAC is already defined
-  command: kubectl get serviceaccounts rbd-csi-provisioner -o jsonpath='{.metadata.name}'
-  register: k8s_ceph_csi_provisioner_rbac
-  changed_when: false
-  failed_when: false
-
-- name: Create the Ceph CSI provisioner RBAC from yaml
-  shell: |
-    kubectl apply -f {{ k8s_ceph_csi_provisioner_rbac_url }}
-  when:
-    - k8s_ceph_csi_provisioner_rbac.rc != 0
-
-- name: Check whether the Ceph CSI nodeplugin RBAC is already defined
-  command: kubectl get serviceaccounts rbd-csi-nodeplugin -o jsonpath='{.metadata.name}'
-  register: k8s_ceph_csi_nodeplugin_rbac
-  changed_when: false
-  failed_when: false
-
-- name: Create the Ceph CSI nodeplugin RBAC from yaml
-  shell: |
-    kubectl apply -f {{ k8s_ceph_csi_nodeplugin_rbac_url }}
-  when:
-    - k8s_ceph_csi_nodeplugin_rbac.rc != 0
-
-# Ceph CSI RBD plugin provisioner and metrics
-- name: Check whether the Ceph CSI RBD plugin provisioner service is already defined
-  command: kubectl get service csi-rbdplugin-provisioner -o jsonpath='{.metadata.name}'
-  register: k8s_ceph_csi_rbdplugin_provisioner
-  changed_when: false
-  failed_when: false
-
-- name: Create the Ceph CSI RBD plugin provisioner service from yaml
-  shell: |
-    kubectl apply -f {{ k8s_ceph_csi_rbdplugin_provisioner_url }}
-  when:
-    - k8s_ceph_csi_rbdplugin_provisioner.rc != 0
-
-- name: Check whether the Ceph CSI rbdplugin daemonset is already defined
-  command: kubectl get daemonset csi-rbdplugin -o jsonpath='{.metadata.name}'
-  register: k8s_ceph_csi_rbdplugin
-  changed_when: false
-  failed_when: false
-
-- name: Create the Ceph CSI RBD plugin daemonset from yaml
-  shell: |
-    kubectl apply -f {{ k8s_ceph_csi_rbdplugin_url }}
-  when:
-    - k8s_ceph_csi_rbdplugin.rc != 0
-
-# Ceph CSI StorageClass
-- name: Deploy CSI RBD StorageClass yaml
-  template:
-    src: "templates/ceph-csi-storageclass.yaml.j2"
-    dest:  "kubernetes/ceph-csi-storageclass.yaml"
-
-- name: Check whether the StorageClass is already defined
-  command: kubectl get storageclass csi-rbd-sc -o jsonpath='{.metadata.name}'
-  register: k8s_ceph_csi_storageclass
-  changed_when: false
-  failed_when: false
-
-- name: Create the CSI RBD StorageClass from yaml
-  shell: |
-    kubectl apply -f kubernetes/ceph-csi-storageclass.yaml
-  when:
-    - k8s_ceph_csi_storageclass.rc != 0
+- include_tasks: create-resource-from-template.yml
+  with_items:
+    # Ceph CSI RBD secret yaml
+    - ceph-csi/ceph-csi-secret
+    # Ceph CSI ConfigMap
+    - ceph-csi/ceph-csi-config
+    # Ceph CSI encryption KMS ConfigMap
+    - ceph-csi/ceph-csi-encryption-kms-config
+    # Ceph CSI RBAC provisioner
+    - ceph-csi/ceph-csi-provisioner-rbac
+    # Ceph CSI RBAC node plugin
+    - ceph-csi/ceph-csi-nodeplugin-rbac
+    # Ceph CSI RBD plugin provisioner deployment
+    - ceph-csi/ceph-csi-rbdplugin-provisioner
+    # Ceph CSI RBD plugin
+    - ceph-csi/ceph-csi-rbdplugin
+    # Ceph CSI StorageClass
+    - ceph-csi/ceph-csi-storageclass

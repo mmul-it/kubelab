@@ -1,5 +1,4 @@
 ---
-
 - import_tasks: common.yml
   become: true
 
@@ -22,10 +21,10 @@
 #      when:
 #        - k8s_users is defined
 #
-#    - include_tasks: ceph-csi.yml
-#      when:
-#        - k8s_ceph_csi_enable|bool
-#
+    - include_tasks: ceph-csi.yml
+      when:
+        - k8s_ceph_csi_enable|bool
+
     - include_tasks: metallb.yml
       when:
         - k8s_metallb_enable|bool

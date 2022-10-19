@@ -1,0 +1,17 @@
+---
+
+# Create resource yaml
+- name: "Create {{ item }} yaml"
+  local_action:
+    module: template
+    src: "templates/{{ item }}.yaml.j2"
+    dest:  "{{ k8s_local_workdir }}/{{ item }}.yaml"
+
+# Resource deployment
+- name: "Create {{ item }} resource"
+  local_action:
+    module: kubernetes.core.k8s
+    kubeconfig: "{{ k8s_kubeconfig }}"
+    state: present
+    src: "{{ k8s_local_workdir }}/{{ item }}.yaml"
+    wait: true
