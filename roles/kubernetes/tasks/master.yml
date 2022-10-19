@@ -208,7 +208,7 @@
     state: absent
     taints:
       - effect: NoSchedule
-        key: "key1"
+        key: "node-role.kubernetes.io/control-plane"
   when:
     - run_non_infra_pods is defined
     - run_non_infra_pods|bool
