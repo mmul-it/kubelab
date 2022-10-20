@@ -91,13 +91,15 @@
     - name: Pulling images required for setting up a Kubernetes cluster
       command: kubeadm config images pull
 
+    - name: Create config.yaml template
+      template:
+        src: templates/config.yaml.j2
+        dest: /etc/kubernetes/config.yaml
+
     - name: Initialize Kubernetes cluster
       command: |
         kubeadm init \
-        --control-plane-endpoint {{ k8s_control_plane_endpoint }} \
-        --apiserver-bind-port {{ k8s_master_port }}
-        --pod-network-cidr={{ k8s_network_cidr }} \
-        --certificate-key {{ k8s_master_cert_key }} \
+        --config=/etc/kubernetes/config.yaml \
         --upload-certs
   become: true
   when:
