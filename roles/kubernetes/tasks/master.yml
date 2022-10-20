@@ -115,19 +115,17 @@
   when:
     - inventory_hostname == k8s_master_node
 
-- name: Deploy network addon template
+- name: Create Network Add-on local folder
   local_action:
-    module: template
-    src: "templates/network-addons/{{ k8s_network_addon }}.yaml.j2"
-    dest:  "{{ k8s_local_workdir }}/{{ k8s_network_addon }}.yaml"
+    module: ansible.builtin.file
+    path: "{{ k8s_local_workdir }}/network-addons"
+    state: directory
   run_once: true
 
-- name: Install Network Add-on
-  local_action:
-    module: k8s
-    state: present
-    src: "{{ k8s_local_workdir }}/{{ k8s_network_addon }}.yaml"
-    kubeconfig: "{{ k8s_kubeconfig }}"
+- include_tasks: create-resource-from-template.yml
+  with_items:
+    # Network Add-on deployment
+    - name: "network-addons/{{ k8s_network_addon }}"
   run_once: true
 
 - block:
