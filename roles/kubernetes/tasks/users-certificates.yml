@@ -19,11 +19,11 @@
       local_action:
         module: command openssl genrsa -out {{ k8s_local_workdir }}/users/{{ k8s_user.name }}.key 2048
 
-    - name: "Generater csr for user {{ k8s_user.name }}"
+    - name: "Generate csr for user {{ k8s_user.name }}"
       local_action:
         module: command openssl req -new -key {{ k8s_local_workdir }}/users/{{ k8s_user.name }}.key -out {{ k8s_local_workdir }}/users/{{ k8s_user.name }}.csr -subj "/CN={{ k8s_user.name }}/O={{ k8s_user.namespace }}"
 
-    - name: "Generater key for user {{ k8s_user.name }}"
+    - name: "Generate key for user {{ k8s_user.name }}"
       local_action:
         module: command openssl x509 -req -in {{ k8s_local_workdir }}/users/{{ k8s_user.name }}.csr -CA {{ k8s_local_workdir }}/pki/ca.crt -CAkey {{ k8s_local_workdir }}/pki/ca.key -CAcreateserial -out {{ k8s_local_workdir }}/users/{{ k8s_user.name }}.crt -days {{ k8s_user.cert_expire_days }}
 
@@ -34,15 +34,29 @@
     - not k8s_user_cert.stat.exists|bool
 
 - block:
-    - name: "Add credentials for use {{ k8s_user.name }} to {{ k8s_kubeconfig }}"
+    - name: "Add context {{ k8s_user.name }}@{{ k8s_cluster_name }} to {{ k8s_kubeconfig }}"
       local_action:
-        module: command kubectl --kubeconfig {{ k8s_kubeconfig }} config set-credentials {{ k8s_user.name }} --client-certificate={{ k8s_local_workdir }}/users/{{ k8s_user.name }}.crt --client-key={{ k8s_local_workdir }}/users/{{ k8s_user.name }}.key
+        module: ansible.builtin.blockinfile
+        path: "{{ k8s_kubeconfig }}"
+        marker: "# {mark} ANSIBLE MANAGED BLOCK - context {{ k8s_user.name }}@{{ k8s_cluster_name }}"
+        insertafter: "contexts:"
+        block: |
+          - context:
+             cluster: {{ k8s_cluster_name }}
+             namespace: {{ k8s_user.namespace }}
+             user: {{ k8s_user.name }}
+            name: {{ k8s_user.name }}@{{ k8s_cluster_name }}
 
-    - name: "Create context for user {{ k8s_user.name }} in namespace {{ k8s_user.namespace }}"
+    - name: "Add user {{ k8s_user.name }} to {{ k8s_kubeconfig }}"
       local_action:
-        module: command kubectl --kubeconfig {{ k8s_kubeconfig }} config set-context {{ k8s_user.name }}-context --cluster=kubernetes --namespace={{ k8s_user.namespace }} --user={{ k8s_user.name }}
-      when:
-       - k8s_user_force_context_update is defined
-       - k8s_user_force_context_update|bool
+        module: ansible.builtin.blockinfile
+        path: "{{ k8s_kubeconfig }}"
+        marker: "# {mark} ANSIBLE MANAGED BLOCK - user {{ k8s_user.name }}"
+        insertafter: "users:"
+        block: |
+          - name: {{ k8s_user.name }}
+            user:
+              client-certificate: users/{{ k8s_user.name }}.crt
+              client-key: users/{{ k8s_user.name }}.key
   when:
     - k8s_user.update_kube_config|bool
