@@ -50,7 +50,7 @@
 
     - name: Create haproxy.cfg file
       template:
-        src: haproxy.cfg.j2
+        src: multi-master/haproxy.cfg.j2
         dest: /usr/local/etc/haproxy/haproxy.cfg
         owner: root
         group: root
@@ -58,7 +58,7 @@
 
     - name: Create keepalived.conf file
       template:
-        src: keepalived.conf.j2
+        src: multi-master/keepalived.conf.j2
         dest: /usr/local/etc/keepalived/keepalived.conf
         owner: root
         group: root
@@ -66,7 +66,7 @@
 
     - name: Create pod configurations"
       template:
-        src: "{{ item }}_pod.yaml.j2"
+        src: "templates/multi-master/{{ item }}_pod.yaml.j2"
         dest: "/etc/kubernetes/manifests/{{ item }}.yaml"
         owner: root
         group: root
@@ -77,7 +77,7 @@
 
     - name: Create keepalived check script
       template:
-        src: templates/check_apiserver.sh.j2
+        src: multi-master/check_apiserver.sh.j2
         dest: /usr/local/etc/keepalived/check_apiserver.sh
         owner: root
         group: root
@@ -93,7 +93,7 @@
 
     - name: Create config.yaml template
       template:
-        src: templates/config.yaml.j2
+        src: config.yaml.j2
         dest: /etc/kubernetes/config.yaml
 
     - name: Initialize Kubernetes cluster
