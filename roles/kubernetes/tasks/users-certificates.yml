@@ -29,34 +29,6 @@
 
     - name: "Force update context in the kube config (since there's a new certificate)"
       set_fact:
-        k8s_user_force_context_update: true
+        k8s_force_users_kubeconfig_generation: true
   when:
     - not k8s_user_cert.stat.exists|bool
-
-- block:
-    - name: "Add context {{ k8s_user.name }}@{{ k8s_cluster_name }} to {{ k8s_kubeconfig }}"
-      local_action:
-        module: ansible.builtin.blockinfile
-        path: "{{ k8s_kubeconfig }}"
-        marker: "# {mark} ANSIBLE MANAGED BLOCK - context {{ k8s_user.name }}@{{ k8s_cluster_name }}"
-        insertafter: "contexts:"
-        block: |
-          - context:
-             cluster: {{ k8s_cluster_name }}
-             namespace: {{ k8s_user.namespace }}
-             user: {{ k8s_user.name }}
-            name: {{ k8s_user.name }}@{{ k8s_cluster_name }}
-
-    - name: "Add user {{ k8s_user.name }} to {{ k8s_kubeconfig }}"
-      local_action:
-        module: ansible.builtin.blockinfile
-        path: "{{ k8s_kubeconfig }}"
-        marker: "# {mark} ANSIBLE MANAGED BLOCK - user {{ k8s_user.name }}"
-        insertafter: "users:"
-        block: |
-          - name: {{ k8s_user.name }}
-            user:
-              client-certificate: users/{{ k8s_user.name }}.crt
-              client-key: users/{{ k8s_user.name }}.key
-  when:
-    - k8s_user.update_kube_config|bool

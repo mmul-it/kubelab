@@ -31,3 +31,23 @@
     - "{{ k8s_users }}"
   loop_control:
     loop_var: k8s_user
+
+- block:
+    - name: Copy kubeconfig in local users dir
+      local_action:
+        module: copy
+        src: "{{ k8s_local_workdir }}/admin.conf"
+        dest: "{{ k8s_local_workdir }}/users/users.conf"
+
+    - name: "Set k8s_users_kubeconfig fact to {{ k8s_local_workdir }}/users/users.conf"
+      set_fact:
+        k8s_users_kubeconfig: "{{ k8s_local_workdir }}/users/users.conf"
+
+    - include_tasks: users-kubeconfig.yml
+      with_items:
+        - "{{ k8s_users }}"
+      loop_control:
+        loop_var: k8s_user
+  when:
+    - k8s_force_users_kubeconfig_generation is defined
+    - k8s_force_users_kubeconfig_generation|bool
