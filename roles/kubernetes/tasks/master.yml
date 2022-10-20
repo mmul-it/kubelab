@@ -111,14 +111,14 @@
 - block:
     - name: Download Kubernetes Dashboard yaml
       local_action:
-        module: get_url
+        module: ansible.builtin.get_url
         url: "{{ k8s_dashboard_url }}"
         dest: "{{ k8s_local_workdir }}/dashboard.yaml"
         mode: '0664'
 
     - name: Deploy dashboard templates
       local_action:
-        module: copy
+        module: ansible.builtin.copy
         src: "files/{{ item }}"
         dest:  "kubernetes/{{ item }}"
       with_items:

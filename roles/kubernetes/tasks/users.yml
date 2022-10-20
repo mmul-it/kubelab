@@ -35,12 +35,13 @@
 - block:
     - name: Copy kubeconfig in local users dir
       local_action:
-        module: copy
+        module: ansible.builtin.copy
         src: "{{ k8s_local_workdir }}/admin.conf"
         dest: "{{ k8s_local_workdir }}/users/users.conf"
 
     - name: "Set k8s_users_kubeconfig fact to {{ k8s_local_workdir }}/users/users.conf"
-      set_fact:
+      local_action:
+        module: ansible.builtin.set_fact
         k8s_users_kubeconfig: "{{ k8s_local_workdir }}/users/users.conf"
 
     - include_tasks: users-kubeconfig.yml

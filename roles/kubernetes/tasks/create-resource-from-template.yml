@@ -3,7 +3,7 @@
 # Create resource yaml
 - name: "Create {{ item.name }} yaml"
   local_action:
-    module: template
+    module: ansible.builtin.template
     src: "templates/{{ item.name }}.yaml.j2"
     dest:  "{{ k8s_local_workdir }}/{{ item.name }}.yaml"
 
