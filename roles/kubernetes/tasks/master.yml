@@ -1,25 +1,5 @@
 ---
 
-- block:
-    - name: Reset Kubernetes local folder
-      local_action:
-        module: ansible.builtin.file
-        path: "{{ k8s_local_workdir }}"
-        state: absent
-      when:
-        - k8s_reset|bool
-    
-    - name: Create Kubernetes local folder
-      local_action:
-        module: ansible.builtin.file
-        path: "{{ k8s_local_workdir }}"
-        state: directory
-
-    - name: Set k8s_kubeconfig fact
-      set_fact:
-        k8s_kubeconfig: "{{ k8s_local_workdir }}/admin.conf"
-  run_once: true
-
 - name: Reset Kubernetes master node
   command: kubeadm reset -f
   when:

@@ -3,6 +3,27 @@
 - import_tasks: common.yml
   become: true
 
+- block:
+    - name: Set k8s_kubeconfig fact
+      local_action:
+        module: ansible.builtin.set_fact
+        k8s_kubeconfig: "{{ k8s_local_workdir }}/admin.conf"
+
+    - name: Reset Kubernetes local folder
+      local_action:
+        module: ansible.builtin.file
+        path: "{{ k8s_local_workdir }}"
+        state: absent
+      when:
+        - k8s_reset|bool
+
+    - name: Create Kubernetes local folder
+      local_action:
+        module: ansible.builtin.file
+        path: "{{ k8s_local_workdir }}"
+        state: directory
+  run_once: true
+
 - import_tasks: master.yml
   when:
     - k8s_role is defined
