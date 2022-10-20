@@ -10,5 +10,5 @@ metadata:
   name: letsencrypt
 spec:
   acme:
-    {{ k8s_cert_manager_issuer.acme|to_yaml|indent }}
+{{ k8s_cert_manager_issuer.acme|to_yaml|indent(4,true) }}
 {% endfor %}

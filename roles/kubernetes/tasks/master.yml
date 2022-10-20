@@ -1,16 +1,12 @@
 ---
 
-- name: Resetting Kubernetes master node
+- name: Reset Kubernetes master node
   command: kubeadm reset -f
   when:
     - k8s_reset|bool
   become: true
 
-- name: Get k8s cluster status
-  command: kubectl cluster-info
-  register: k8s_cluster_info
-  changed_when: false
-  failed_when: false
+- import_tasks: node_status.yml
 
 - name: Set control plane endpoint for single node
   set_fact:
@@ -32,25 +28,25 @@
         - haproxy
         - keepalived
 
-    - name: Creating haproxy.cfg file
+    - name: Create haproxy.cfg file
       template:
-        src: haproxy.cfg.j2
+        src: multi-master/haproxy.cfg.j2
         dest: /usr/local/etc/haproxy/haproxy.cfg
         owner: root
         group: root
         mode: 0644
 
-    - name: Creating keepalived.conf file
+    - name: Create keepalived.conf file
       template:
-        src: keepalived.conf.j2
+        src: multi-master/keepalived.conf.j2
         dest: /usr/local/etc/keepalived/keepalived.conf
         owner: root
         group: root
         mode: 0644
 
-    - name: Creating pod configurations"
+    - name: Create pod configurations"
       template:
-        src: "{{ item }}_pod.yaml.j2"
+        src: "templates/multi-master/{{ item }}_pod.yaml.j2"
         dest: "/etc/kubernetes/manifests/{{ item }}.yaml"
         owner: root
         group: root
@@ -59,9 +55,9 @@
         - haproxy
         - keepalived
 
-    - name: Creating keepalived check script
+    - name: Create keepalived check script
       template:
-        src: templates/check_apiserver.sh.j2
+        src: multi-master/check_apiserver.sh.j2
         dest: /usr/local/etc/keepalived/check_apiserver.sh
         owner: root
         group: root
@@ -70,84 +66,76 @@
   when:
     - k8s_multi_master | bool
 
-- name: Create local directories
-  file:
-    path: "{{ item }}"
-    state: directory
-  with_items:
-    - .kube
-    - kubernetes
-
-- name: Setting up the master node
+- name: Set up the master node
   block:
     - name: Pulling images required for setting up a Kubernetes cluster
       command: kubeadm config images pull
-      become: true
 
-    - name: Initializing Kubernetes cluster
+    - name: Create config.yaml template
+      template:
+        src: config.yaml.j2
+        dest: /etc/kubernetes/config.yaml
+
+    - name: Initialize Kubernetes cluster
       command: |
         kubeadm init \
-        --control-plane-endpoint {{ k8s_control_plane_endpoint }} \
-        --apiserver-bind-port {{ k8s_master_port }}
-        --pod-network-cidr={{ k8s_network_cidr }} \
-        --certificate-key {{ k8s_master_cert_key }} \
+        --config=/etc/kubernetes/config.yaml \
         --upload-certs
-      become: true
-
-    - name: Copying required files
-      copy:
-        src: '/etc/kubernetes/admin.conf'
-        dest:  "~{{ ansible_user_id }}/.kube/config"
-        remote_src: yes
-        owner: "{{ ansible_user_id }}"
-      become: true
-
-    - name: Deploying network addon template
-      template:
-        src: "templates/network-addons/{{ k8s_network_addon }}.yaml.j2"
-        dest:  "kubernetes/{{ k8s_network_addon }}.yaml"
-
-    - name: Install Network Add-on
-      command: "kubectl apply -f kubernetes/{{ k8s_network_addon }}.yaml"
-
-    - block:
-        - name: Deploying dashboard templates
-          copy:
-            src: "files/{{ item }}"
-            dest:  "kubernetes/{{ item }}"
-          with_items:
-            - "{{ k8s_dashboard_resources }}"
-
-        - name: Creating Kubernetes Dashboard resource from url
-          command: "kubectl apply -f {{ k8s_dashboard_url }}"
-
-        - name: Creating Kubernetes Dashboard access resources
-          command: "kubectl apply -f kubernetes/{{ item }}"
-          with_items:
-            - "{{ k8s_dashboard_resources }}"
-      when:
-        - k8s_dashboard_deploy|bool
+  become: true
   when:
-    - k8s_cluster_info.rc != 0
+    - k8s_node_status != "Ready"
     - inventory_hostname == k8s_master_node
 
-- block:
-    - name: Get taints for master node
-      shell: |
-        set -o pipefail
-        kubectl describe node {{ ansible_hostname }} | \
-        egrep '^Taints:.*node-role.kubernetes.io/master:NoSchedule'
-      register: k8s_master_get_noschedule_taint
-      changed_when: false
-      failed_when: false
-
-    - name: Enable master to run non infrastructure pods
-      command: "kubectl taint nodes {{ ansible_fqdn }} node-role.kubernetes.io/master:NoSchedule-"
-      when:
-        - k8s_master_get_noschedule_taint.rc == 0
+- name: Copy remote /etc/kubernetes/admin.conf on local directory
+  fetch:
+    src: '/etc/kubernetes/admin.conf'
+    dest: "{{ k8s_local_workdir }}/"
+    flat: yes
+  become: true
   when:
-    - run_non_infra_pods is defined
-    - run_non_infra_pods|bool
+    - inventory_hostname == k8s_master_node
+
+- name: Create Network Add-on local folder
+  local_action:
+    module: ansible.builtin.file
+    path: "{{ k8s_local_workdir }}/network-addons"
+    state: directory
+  run_once: true
+
+- include_tasks: create-resource-from-template.yml
+  with_items:
+    # Network Add-on deployment
+    - name: "network-addons/{{ k8s_network_addon }}"
+  run_once: true
+
+- block:
+    - name: Download Kubernetes Dashboard yaml
+      local_action:
+        module: ansible.builtin.get_url
+        url: "{{ k8s_dashboard_url }}"
+        dest: "{{ k8s_local_workdir }}/dashboard.yaml"
+        mode: '0664'
+
+    - name: Deploy dashboard templates
+      local_action:
+        module: ansible.builtin.copy
+        src: "files/{{ item }}"
+        dest:  "kubernetes/{{ item }}"
+      with_items:
+        - "{{ k8s_dashboard_resources }}"
+
+    - name: Create Kubernetes Dashboard resources
+      local_action:
+        module: kubernetes.core.k8s
+        kubeconfig: "{{ k8s_kubeconfig }}"
+        state: present
+        src: "{{ k8s_local_workdir }}/{{ item }}"
+      with_items:
+        - "dashboard.yaml"
+        - "{{ k8s_dashboard_resources }}"
+  run_once: true
+  when:
+    - k8s_dashboard_deploy|bool
 
 - name: Set kubeadm join credentials from master node
   block:
@@ -158,6 +146,7 @@
         kubeadm token list | grep 'system:bootstrappers:kubeadm' | awk '{print $1}'
       register: k8s_token_output
       changed_when: false
+      become: true
 
     - name: Set fact k8s_token_output
       set_fact:
@@ -179,32 +168,27 @@
   when:
     - inventory_hostname == k8s_master_node
 
-- name: Join other masters
-  block:
-    - name: "Check node join status"
-      command: kubectl get nodes {{ ansible_fqdn }} -o jsonpath='{.status.conditions[?(@.reason == "KubeletReady")].type}'
-      register: k8s_node_join_status
-      changed_when: false
-      failed_when: false
-      delegate_to: "{{ k8s_master_node }}"
-
-    - name: Joining control-plane nodes with kubernetes master
-      command: |
-        kubeadm join {{ k8s_control_plane_endpoint }} \
-        --token {{ hostvars[k8s_master_node]['k8s_token'] }} \
-        --discovery-token-ca-cert-hash sha256:{{ hostvars[k8s_master_node]['k8s_discovery_token_ca_cert_hash'] }} \
-        --control-plane \
-        --certificate-key {{ k8s_master_cert_key }}
-      become: true
-      when:
-        - k8s_node_join_status.stdout != "Ready"
-
-    - name: Copying required files
-      copy:
-        src: '/etc/kubernetes/admin.conf'
-        dest:  "~{{ ansible_user_id }}/.kube/config"
-        remote_src: yes
-        owner: "{{ ansible_user_id }}"
-      become: true
+- name: Join control-plane nodes with kubernetes master
+  command: |
+    kubeadm join {{ k8s_control_plane_endpoint }} \
+    --token {{ hostvars[k8s_master_node]['k8s_token'] }} \
+    --discovery-token-ca-cert-hash sha256:{{ hostvars[k8s_master_node]['k8s_discovery_token_ca_cert_hash'] }} \
+    --control-plane \
+    --certificate-key {{ k8s_master_cert_key }}
+  become: true
   when:
+    - k8s_node_status != 'Ready'
     - inventory_hostname != k8s_master_node
+
+- name: Enable master to run non infrastructure pods
+  local_action:
+    module: kubernetes.core.k8s_taint
+    kubeconfig: "{{ k8s_kubeconfig }}"
+    name: "{{ inventory_hostname }}"
+    state: absent
+    taints:
+      - effect: NoSchedule
+        key: "node-role.kubernetes.io/control-plane"
+  when:
+    - run_non_infra_pods is defined
+    - run_non_infra_pods|bool

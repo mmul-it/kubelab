@@ -3,6 +3,27 @@
 - import_tasks: common.yml
   become: true
 
+- block:
+    - name: Set k8s_kubeconfig fact
+      local_action:
+        module: ansible.builtin.set_fact
+        k8s_kubeconfig: "{{ k8s_local_workdir }}/admin.conf"
+
+    - name: Reset Kubernetes local folder
+      local_action:
+        module: ansible.builtin.file
+        path: "{{ k8s_local_workdir }}"
+        state: absent
+      when:
+        - k8s_reset|bool
+
+    - name: Create Kubernetes local folder
+      local_action:
+        module: ansible.builtin.file
+        path: "{{ k8s_local_workdir }}"
+        state: directory
+  run_once: true
+
 - import_tasks: master.yml
   when:
     - k8s_role is defined
@@ -15,25 +36,21 @@
 
 - block:
     - include_tasks: users.yml
-      with_items:
-        - "{{ k8s_users }}"
-      loop_control:
-        loop_var: k8s_user
       when:
         - k8s_users is defined
-    
+
     - include_tasks: ceph-csi.yml
       when:
         - k8s_ceph_csi_enable|bool
-    
+
     - include_tasks: metallb.yml
       when:
         - k8s_metallb_enable|bool
-    
+
     - include_tasks: ingress-nginx.yml
       when:
         - k8s_ingress_nginx_enable|bool
-    
+
     - include_tasks: cert-manager.yml
       when:
         - k8s_cert_manager_enable|bool

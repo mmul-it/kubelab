@@ -1,5 +1,9 @@
 ---
 
+k8s_local_workdir: "~/kubernetes"
+
+k8s_wait_timeout: 600
+
 k8s_epel_enable: "{{ ansible_distribution_major_version == '7' | bool }}"
 
 k8s_container_runtime: "{{ 'docker-ce' if ansible_distribution_major_version == '7' else 'containerd.io' }}"
@@ -10,6 +14,8 @@ k8s_packages:
   - "{{ k8s_container_runtime }}"
 
 k8s_container_service: "{{ 'docker' if ansible_distribution_major_version == '7' else 'containerd' }}"
+
+k8s_cluster_name: "kubernetes"
 
 k8s_services:
   - kubelet
@@ -81,23 +87,19 @@ k8s_dashboard_resources:
   - dashboard-admin-user_serviceaccount.yaml
 
 k8s_ceph_csi_enable: false
-k8s_ceph_csi_release: master
-k8s_ceph_csi_provisioner_rbac_url: https://raw.githubusercontent.com/ceph/ceph-csi/{{ k8s_ceph_csi_release }}/deploy/rbd/kubernetes/csi-provisioner-rbac.yaml
-k8s_ceph_csi_nodeplugin_rbac_url: https://raw.githubusercontent.com/ceph/ceph-csi/{{ k8s_ceph_csi_release }}/deploy/rbd/kubernetes/csi-nodeplugin-rbac.yaml
-k8s_ceph_csi_rbdplugin_provisioner_url: https://raw.githubusercontent.com/ceph/ceph-csi/{{ k8s_ceph_csi_release }}/deploy/rbd/kubernetes/csi-rbdplugin-provisioner.yaml
-k8s_ceph_csi_rbdplugin_url: https://raw.githubusercontent.com/ceph/ceph-csi/{{ k8s_ceph_csi_release }}/deploy/rbd/kubernetes/csi-rbdplugin.yaml
+k8s_ceph_csi_namespace: ceph-csi
 k8s_ceph_csi_vol_expansion: false
 
 k8s_metallb_enable: false
-k8s_metallb_url: https://raw.githubusercontent.com/metallb/metallb/v0.13.6/config/manifests/metallb-native.yaml
+k8s_metallb_namespace: metallb-system
 k8s_metallb_pools: {}
 
 k8s_ingress_nginx_enable: false
-k8s_ingress_nginx_url: https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.4.0/deploy/static/provider/baremetal/deploy.yaml
-k8s_ingress_nginx_lb_services: {}
+k8s_ingress_nginx_namespace: ingress-nginx
+k8s_ingress_nginx_services: {}
 
 k8s_cert_manager_enable: false
-k8s_cert_manager_url: https://github.com/cert-manager/cert-manager/releases/download/v1.9.1/cert-manager.yaml
+k8s_cert_manager_namespace: cert-manager
 k8s_cert_manager_issuers: {}
 
 # Set this to true to force k8s cluster reset

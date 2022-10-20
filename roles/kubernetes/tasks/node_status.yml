@@ -1,0 +1,32 @@
+---
+
+- name: Get Kubernetes node status
+  local_action:
+    module: kubernetes.core.k8s_info
+    kubeconfig: "{{ k8s_kubeconfig }}"
+    api_version: v1
+    kind: Node
+    label_selectors:
+      - "kubernetes.io/hostname = {{ inventory_hostname }}"
+  register: k8s_info
+  changed_when: false
+  failed_when: false
+
+- name: Set fact for json node status extraction
+  set_fact:
+    jmespath_node_ready: "resources[0].status.conditions[?reason == 'KubeletReady'].type"
+
+- name: Set status of the master node if k8s_info is successful
+  set_fact:
+    k8s_node_status: "{{ k8s_info|json_query(jmespath_node_ready)|first }}"
+  when:
+    - k8s_info.resources is defined
+    - k8s_info.resources|length > 0
+    - k8s_info.exception is undefined
+
+- name: Set status of the master node if k8s_info is unsuccessful
+  set_fact:
+    k8s_node_status: 'NotReady'
+  when:
+    - k8s_info.exception is defined or
+      k8s_info.resources|length == 0

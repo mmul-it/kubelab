@@ -1,27 +1,23 @@
 ---
 
-- name: Check Ingress NGINX deployment
-  command: kubectl diff -f {{ k8s_ingress_nginx_url }}
-  register: k8s_ingress_nginx_deploy_check
-  changed_when: false
-  failed_when: false
+- name: Create ingress-nginx local folder
+  local_action:
+    module: ansible.builtin.file
+    path: "{{ k8s_local_workdir }}/ingress-nginx"
+    state: directory
 
-- name: Deploy Ingress NGINX
-  command: kubectl apply -f {{ k8s_ingress_nginx_url }}
-  when:
-    - k8s_ingress_nginx_deploy_check.rc != 0
+- name: Create Ingress NGINX namespace
+  local_action:
+    module: kubernetes.core.k8s
+    kubeconfig: "{{ k8s_kubeconfig }}"
+    kind: Namespace
+    name: "{{ k8s_ingress_nginx_namespace }}"
+    state: present
 
-- name: Get Ingress NGINX controller pod ID
-  command: kubectl -n ingress-nginx get pods -l app.kubernetes.io/component=controller -o name
-  register: k8s_ingress_nginx_controller_pod
-  changed_when: false
-
-- name: Wait for Ingress NGINX controller to come up
-  command: kubectl -n ingress-nginx wait --for=condition=Ready=True --timeout=600s {{ k8s_ingress_nginx_controller_pod.stdout }}
-  timeout: 600
-  changed_when: false
-
-- include_tasks: ingress-nginx-services.yml
-  loop: "{{ k8s_ingress_nginx_lb_services }}"
-  when:
-    - k8s_ingress_nginx_lb_services|length > 0
+- include_tasks: create-resource-from-template.yml
+  with_items:
+    # Ingress NGINX deployment
+    - name: ingress-nginx/ingress-nginx-deployment
+      wait: false
+    # Ingress NGINX services
+    - name: ingress-nginx/ingress-nginx-services

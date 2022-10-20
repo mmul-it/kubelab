@@ -1,19 +1,14 @@
 ---
 
-- name: Resetting Kubernetes worker node
+- name: Reset Kubernetes worker node
   command: kubeadm reset -f
   when:
     - k8s_reset|bool
   become: true
 
-- name: "Check node join status"
-  command: kubectl get nodes {{ ansible_fqdn }} -o jsonpath='{.status.conditions[?(@.reason == "KubeletReady")].type}'
-  register: k8s_node_join_status
-  changed_when: false
-  failed_when: false
-  delegate_to: "{{ k8s_master_node }}"
+- import_tasks: node_status.yml
 
-- name: Joining worker nodes
+- name: Join worker nodes
   block:
   - name: Joining worker kubernetes single master
     command: kubeadm join --token {{ hostvars[k8s_master_node]['k8s_token'] }} \
@@ -21,12 +16,12 @@
       {{ k8s_master_node }}:{{ k8s_master_port }}
     when: not k8s_multi_master | bool
 
-  - name: Joining worker kubernetes multi master
+  - name: Join worker kubernetes multi master
     command: |
       kubeadm join {{ k8s_balancer_VIP }}:{{ k8s_balancer_port }} \
       --token {{ hostvars[k8s_master_node]['k8s_token'] }} \
       --discovery-token-ca-cert-hash sha256:{{ hostvars[k8s_master_node]['k8s_discovery_token_ca_cert_hash'] }}
     when: k8s_multi_master | bool
   when:
-    - k8s_node_join_status.stdout != "Ready"
+    - k8s_node_status != 'Ready'
   become: true

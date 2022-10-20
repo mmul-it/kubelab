@@ -1,3 +1,4 @@
+{% for k8s_user in k8s_users: %}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -8,3 +9,4 @@ rules:
   - apiGroups: [{{ k8s_user.role_rules_apigroups }}] # "" indicates the core API group
     resources: [{{ k8s_user.role_rules_resources }}]
     verbs: [{{ k8s_user.role_rules_verbs }}]
+{% endfor %}

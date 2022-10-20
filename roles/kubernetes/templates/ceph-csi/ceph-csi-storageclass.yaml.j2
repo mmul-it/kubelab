@@ -11,11 +11,11 @@ parameters:
 
    imageFeatures: layering
    csi.storage.k8s.io/provisioner-secret-name: csi-rbd-secret
-   csi.storage.k8s.io/provisioner-secret-namespace: default
+   csi.storage.k8s.io/provisioner-secret-namespace: {{ k8s_ceph_csi_namespace }}
    csi.storage.k8s.io/controller-expand-secret-name: csi-rbd-secret
-   csi.storage.k8s.io/controller-expand-secret-namespace: default
+   csi.storage.k8s.io/controller-expand-secret-namespace: {{ k8s_ceph_csi_namespace }}
    csi.storage.k8s.io/node-stage-secret-name: csi-rbd-secret
-   csi.storage.k8s.io/node-stage-secret-namespace: default
+   csi.storage.k8s.io/node-stage-secret-namespace: {{ k8s_ceph_csi_namespace }}
 reclaimPolicy: Delete
 allowVolumeExpansion: {{ k8s_ceph_csi_vol_expansion }}
 mountOptions:
