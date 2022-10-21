@@ -35,6 +35,10 @@
     - k8s_role == 'worker'
 
 - block:
+    - include_tasks: dashboard.yml
+      when:
+        - k8s_dashboard_enable|bool
+
     - include_tasks: users.yml
       when:
         - k8s_users is defined

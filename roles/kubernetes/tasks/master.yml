@@ -108,35 +108,6 @@
     - name: "network-addons/{{ k8s_network_addon }}"
   run_once: true
 
-- block:
-    - name: Download Kubernetes Dashboard yaml
-      local_action:
-        module: ansible.builtin.get_url
-        url: "{{ k8s_dashboard_url }}"
-        dest: "{{ k8s_local_workdir }}/dashboard.yaml"
-        mode: '0664'
-
-    - name: Deploy dashboard templates
-      local_action:
-        module: ansible.builtin.copy
-        src: "files/{{ item }}"
-        dest:  "kubernetes/{{ item }}"
-      with_items:
-        - "{{ k8s_dashboard_resources }}"
-
-    - name: Create Kubernetes Dashboard resources
-      local_action:
-        module: kubernetes.core.k8s
-        kubeconfig: "{{ k8s_kubeconfig }}"
-        state: present
-        src: "{{ k8s_local_workdir }}/{{ item }}"
-      with_items:
-        - "dashboard.yaml"
-        - "{{ k8s_dashboard_resources }}"
-  run_once: true
-  when:
-    - k8s_dashboard_deploy|bool
-
 - name: Set kubeadm join credentials from master node
   block:
     - name: Get Token from Kubernetes

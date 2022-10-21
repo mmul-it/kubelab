@@ -80,11 +80,9 @@ k8s_network_addon_ports:
 #  exec-opts:
 #    - native.cgroupdriver={{ k8s_docker_native_cgroupdriver }}
 
-k8s_dashboard_deploy: false
-k8s_dashboard_url: https://raw.githubusercontent.com/kubernetes/dashboard/v2.4.0/aio/deploy/recommended.yaml
-k8s_dashboard_resources:
-  - dashboard-admin-user_clusterrolebinding.yaml
-  - dashboard-admin-user_serviceaccount.yaml
+k8s_dashboard_enable: false
+k8s_dashboard_namespace: kubernetes-dashboard
+k8s_dashboard_user: dashboard-user
 
 k8s_ceph_csi_enable: false
 k8s_ceph_csi_namespace: ceph-csi
