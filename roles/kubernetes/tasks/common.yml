@@ -225,6 +225,17 @@
         sysctl_set: yes
         state: present
         reload: yes
+
+    - name: Allow MetalLB ports in Firewalld
+      firewalld:
+       port: "{{ item }}"
+       state: enabled
+       permanent: yes
+       immediate: yes
+      with_items:
+        - "{{ k8s_metallb_ports }}"
+      when:
+        - k8s_metallb_enable|bool
   when:
     - k8s_firewalld_enable|bool
 

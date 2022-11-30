@@ -90,6 +90,8 @@ k8s_ceph_csi_vol_expansion: false
 
 k8s_metallb_enable: false
 k8s_metallb_namespace: metallb-system
+k8s_metallb_ports:
+  - 7946/tcp
 k8s_metallb_pools: {}
 
 k8s_ingress_nginx_enable: false
