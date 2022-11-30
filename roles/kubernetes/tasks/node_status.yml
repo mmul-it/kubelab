@@ -16,17 +16,14 @@
   set_fact:
     jmespath_node_ready: "resources[0].status.conditions[?reason == 'KubeletReady'].type"
 
-- name: Set status of the master node if k8s_info is successful
+- name: Set status of the node to NotReady
+  set_fact:
+    k8s_node_status: 'NotReady'
+
+- name: Reset status of the node only if k8s_info is successful
   set_fact:
     k8s_node_status: "{{ k8s_info|json_query(jmespath_node_ready)|first }}"
   when:
     - k8s_info.resources is defined
     - k8s_info.resources|length > 0
     - k8s_info.exception is undefined
-
-- name: Set status of the master node if k8s_info is unsuccessful
-  set_fact:
-    k8s_node_status: 'NotReady'
-  when:
-    - k8s_info.exception is defined or
-      k8s_info.resources|length == 0
