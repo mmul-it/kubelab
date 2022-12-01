@@ -142,24 +142,22 @@
        enabled: yes
        masked: no
 
-    - block:
-        - name: Allow masquerade in Firewalld for multi master setup
-          firewalld:
-            masquerade: yes
-            state: enabled
-            permanent: yes
-            immediate: yes
+    - name: Allow masquerade in Firewalld
+      firewalld:
+        masquerade: yes
+        state: enabled
+        permanent: yes
+        immediate: yes
 
-        - name: Enable VRRP protocol for multi master setup
-          firewalld:
-            rich_rule: rule protocol value="vrrp" accept
-            state: enabled
-            permanent: yes
-            immediate: yes
-          when:
-            - k8s_role is defined
-            - k8s_role == 'master'
+    - name: Enable VRRP protocol for multi master setup
+      firewalld:
+        rich_rule: rule protocol value="vrrp" accept
+        state: enabled
+        permanent: yes
+        immediate: yes
       when:
+        - k8s_role is defined
+        - k8s_role == 'master'
         - k8s_multi_master | bool
 
     - name: Allow master node network ports in Firewalld
