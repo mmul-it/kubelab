@@ -49,6 +49,6 @@ backend apiserver
     default-server verify none check-ssl inter 10s downinter 5s rise 2 fall 2 slowstart 60s maxconn 5000 maxqueue 5000 weight 100
 {% for host in ansible_play_batch %}
 {% if hostvars[host].k8s_role == 'master' %}
-    server master-{{ loop.index }} {{ host }}:{{ hostvars[host].k8s_master_port }} check
+    server master-{{ loop.index }} {{ host }}:{{ k8s_master_port }} check
 {% endif %}
 {% endfor %}
