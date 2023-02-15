@@ -48,11 +48,11 @@ k8s_multi_master: false
 # k8s_balancer_password: "d6e284576158b1"
 
 k8s_master_ports:
-  - 6443/tcp
   - 2379-2380/tcp
+  - 6443/tcp
   - 10250/tcp
-  - 10251/tcp
-  - 10252/tcp
+  - 10257/tcp
+  - 10259/tcp
   # Multi master - Remember to enable the load balancer port
   #- 8443/tcp
 
