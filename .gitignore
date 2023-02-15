@@ -1,6 +1,6 @@
 inventory/*
 !inventory/lab
-/terraform
+/terraform*
 /.terraform*
 venv*
 *.swp
