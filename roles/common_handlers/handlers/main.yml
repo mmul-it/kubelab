@@ -1,5 +1,0 @@
----
-
-- name: reload systemd configuration
-  systemd:
-    daemon-reload: yes

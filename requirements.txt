@@ -1,4 +1,3 @@
 ansible
 ansible-vault
-azure-cli
 kubernetes

@@ -1,7 +1,0 @@
----
-
-graylog_elastic_addr: '192.168.122.22'
-graylog_mongodb_addr: '192.168.122.22'
-server_weight: 3
-graylog_server_inputbuffer_size: 65536
-keepalived_vrrp_priority: 100

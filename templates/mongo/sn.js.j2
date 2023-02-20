@@ -1,5 +1,0 @@
-rs.initiate( { _id: "graylog-shard-rs0", members: [ { _id: 0, host: "{{ mongodb_master_node }}:{{ mongodb_sn_port }}" } ] })
-
-{% for node in mongodb_nodes.split(',') -%}
-rs.add("{{ node.strip() }}:{{ mongodb_sn_port }}")
-{% endfor %}

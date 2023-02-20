@@ -1,8 +1,0 @@
----
-
-- name: "Deploy group {{ terraform_group_name }} VMS templates"
-  template:
-    src: "{{ item.src }}"
-    dest: "{{ item.dest }}"
-  with_items:
-    - { src: "libvirt/vms.tf.j2", dest: "{{ terraform_config_dir }}/{{ terraform_group_name }}.vms.tf" }

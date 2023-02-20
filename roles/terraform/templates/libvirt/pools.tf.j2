@@ -1,9 +1,0 @@
-# Libvirt Storage Pools
-{% for pool in terraform_libvirt_pools %}
-
-resource "libvirt_pool" "{{ pool.name }}" {
-  name = "{{ pool.name }}"
-  type = "{{ pool.type }}"
-  path = "{{ pool.path }}"
-}
-{% endfor %}

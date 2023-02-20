@@ -1,4 +1,0 @@
----
-
-url_apt_key: "http://keyserver.ubuntu.com/pks/lookup?op=get&search=0x7F0CEB10"
-mongodb_repository: "deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen"

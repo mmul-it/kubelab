@@ -1,2 +1,0 @@
-sh.addShard("graylog-shard-rs0/{% for node in mongodb_nodes.split(',') -%}{{ node.strip() }}:{{ mongodb_sn_port }}{%- if not loop.last -%},{%- endif -%}{%- endfor -%}")
-sh.enableSharding("graylog")

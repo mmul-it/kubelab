@@ -1,0 +1,35 @@
+---
+
+- name: "Create {{ k8s_user.namespace }} namespace for user {{ k8s_user.name }}"
+  local_action:
+    module: kubernetes.core.k8s
+    kubeconfig: "{{ k8s_kubeconfig }}"
+    kind: Namespace
+    name: "{{ k8s_user.namespace }}"
+    state: present
+
+- name: "Check if certificates path for {{ k8s_user.name }} already exists"
+  local_action:
+    module: ansible.builtin.stat
+    path: "{{ k8s_local_workdir }}/users/{{ k8s_user.name }}.crt"
+  register: k8s_user_cert
+
+- block:
+    - name: "Generate key for user {{ k8s_user.name }}"
+      local_action:
+        module: ansible.builtin.command openssl genrsa -out {{ k8s_local_workdir }}/users/{{ k8s_user.name }}.key 2048
+
+    - name: "Generate csr for user {{ k8s_user.name }}"
+      local_action:
+        module: ansible.builtin.command openssl req -new -key {{ k8s_local_workdir }}/users/{{ k8s_user.name }}.key -out {{ k8s_local_workdir }}/users/{{ k8s_user.name }}.csr -subj "/CN={{ k8s_user.name }}/O={{ k8s_user.namespace }}"
+
+    - name: "Generate key for user {{ k8s_user.name }}"
+      local_action:
+        module: ansible.builtin.command openssl x509 -req -in {{ k8s_local_workdir }}/users/{{ k8s_user.name }}.csr -CA {{ k8s_local_workdir }}/pki/ca.crt -CAkey {{ k8s_local_workdir }}/pki/ca.key -CAcreateserial -out {{ k8s_local_workdir }}/users/{{ k8s_user.name }}.crt -days {{ k8s_user.cert_expire_days }}
+
+    - name: "Force update context in the kube config (since there's a new certificate)"
+      local_action:
+        module: ansible.builtin.set_fact
+        k8s_force_users_kubeconfig_generation: true
+  when:
+    - not k8s_user_cert.stat.exists|bool

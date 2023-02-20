@@ -1,9 +1,0 @@
----
-
-# Nginx configuration
-nginx_backend_servers: {}
-nginx_backend_port: 9000
-nginx_http_name: my_nginx
-nginx_http_port: 80
-nginx_log_dir: '/var/log/nginx'
-nginx_streams: {}

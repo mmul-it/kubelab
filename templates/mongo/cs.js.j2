@@ -1,7 +1,0 @@
-rs.initiate( { _id: "configReplSet", configsvr: true, version: 1, members: [ { _id: 0, host: "{{ mongodb_master_node }}:{{ mongodb_cs_port }}", priority: 1, votes: 1 } ] } )
-
-{% for node in mongodb_nodes.split(',') -%}
-{% if node != mongodb_master_node -%}
-rs.add( { host: "{{ node.strip() }}:{{ mongodb_cs_port }}", priority: 1, votes: 1 } )
-{% endif -%}
-{% endfor %}

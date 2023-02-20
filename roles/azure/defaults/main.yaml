@@ -1,9 +1,0 @@
----
-
-# Variables shared by various tasks
-
-azure_client_id: 'YourClientID'
-azure_client_secret: 'YourSharedKey'
-azure_tenant_id: 'YourTenantID'
-azure_subscription_id: 'YourSubscriptionID'
-azure_resource_group_name: 'YourResourceGroup'
