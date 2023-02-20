@@ -1,0 +1,24 @@
+---
+
+galaxy_info:
+  role_name: kubelab
+  namespace: mmul
+  author: Raoul Scarazzini (rasca@mmul.it)
+  description: |
+    This role automates the creation of a Kubernetes cluster complete of
+    additional dashboard, users and operators.
+  license: license (MIT)
+  min_ansible_version: '2'
+  platforms:
+    - name: EL
+      versions:
+        - all
+    - name: Fedora
+      versions:
+        - all
+  galaxy_tags:
+    - kubernetes
+    - kubelab
+
+dependencies:
+  - common_handlers

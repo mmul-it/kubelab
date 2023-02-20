@@ -1,2 +1,0 @@
-url: https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.4.0/deploy/static/provider/baremetal/deploy.yaml 
-release: v1.4.0
