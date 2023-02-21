@@ -6,12 +6,23 @@ k8s_wait_timeout: 600
 
 k8s_epel_enable: "{{ ansible_distribution_major_version == '7' | bool }}"
 
-k8s_container_runtime: "{{ 'docker-ce' if ansible_distribution_major_version == '7' else 'containerd.io' }}"
-
-k8s_packages:
+k8s_Debian_packages:
+  - apt-transport-https
+  - ca-certificates
+  - curl
+  - gnupg2
+  - software-properties-common
+  - docker-ce
+  - docker-ce-cli
+  - containerd.io
+  - kubelet
   - kubeadm
   - kubectl
-  - "{{ k8s_container_runtime }}"
+
+k8s_RedHat_packages:
+  - containerd.io
+  - kubeadm
+  - kubectl
 
 k8s_container_service: "{{ 'docker' if ansible_distribution_major_version == '7' else 'containerd' }}"
 

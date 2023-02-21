@@ -13,3 +13,10 @@
     state: restarted
     enabled: yes
   become: true
+
+- name: restart firewalld daemon
+  service:
+    name: firewalld
+    state: restarted
+    enabled: yes
+  become: true

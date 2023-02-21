@@ -115,6 +115,8 @@
         set -o pipefail
         if [ !$(kubeadm token list) ]; then kubeadm token create ; fi
         kubeadm token list | grep 'system:bootstrappers:kubeadm' | awk '{print $1}'
+      args:
+        executable: /bin/bash
       register: k8s_token_output
       changed_when: false
       become: true
