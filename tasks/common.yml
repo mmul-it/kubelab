@@ -1,5 +1,12 @@
 ---
 
+- name: Remove AppArmor
+  package:
+    name: apparmor
+    state: absent
+  when:
+    - ansible_os_family == 'Debian'
+
 - name: Checking active SWAP
   command: swapon -s
   register: active_swap
@@ -42,7 +49,11 @@
     state: present
     reload: yes
 
-- name: "Build hosts file"
+- name: Set hostname
+  hostname:
+    name: "{{ inventory_hostname }}"
+
+- name: Build hosts file
   lineinfile:
     dest: /etc/hosts
     regexp: '.*{{ item }}$'
@@ -50,66 +61,112 @@
     state: present
   with_items: "{{ groups['k8s_nodes'] }}"
 
-- name: Adding EPEL repo
-  yum:
-    name: "https://dl.fedoraproject.org/pub/epel/epel-release-latest-{{ ansible_distribution_major_version }}.noarch.rpm"
-    state: present
+- block:
+    - name: Adding EPEL repo
+      yum:
+        name: "https://dl.fedoraproject.org/pub/epel/epel-release-latest-{{ ansible_distribution_major_version }}.noarch.rpm"
+        state: present
+      when:
+        - k8s_epel_enable|bool
+
+    - name: Adding Docker-CE repo
+      yum_repository:
+        name: docker-ce
+        description: Docker-CE
+        baseurl: "https://download.docker.com/linux/centos/{{ ansible_distribution_major_version }}/$basearch/stable"
+        enabled: yes
+        gpgcheck: yes
+        repo_gpgcheck: yes
+        gpgkey: 'https://download.docker.com/linux/centos/gpg'
+
+    - name: Adding Docker-CE repo keys
+      rpm_key:
+        state: present
+        key: 'https://download.docker.com/linux/centos/gpg'
+      retries: 5
+      delay: 5
+
+    - name: Adding Kubernetes repo
+      yum_repository:
+        name: kubernetes
+        description: Kubernetes
+        baseurl: 'https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64'
+        enabled: yes
+        gpgcheck: yes
+        repo_gpgcheck: yes
+        gpgkey:
+          - 'https://packages.cloud.google.com/yum/doc/yum-key.gpg'
+          - 'https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg'
+
+    - name: Adding Kubernetes repo keys
+      rpm_key:
+        state: present
+        key: "{{ item }}"
+      with_items:
+        - 'https://packages.cloud.google.com/yum/doc/yum-key.gpg'
+        - 'https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg'
+      retries: 5
+      delay: 5
   when:
-    - k8s_epel_enable|bool
+    - ansible_os_family == 'RedHat'
 
-- name: Adding Docker-CE repo
-  yum_repository:
-    name: docker-ce
-    description: Docker-CE
-    baseurl: "https://download.docker.com/linux/centos/{{ ansible_distribution_major_version }}/$basearch/stable"
-    enabled: yes
-    gpgcheck: yes
-    repo_gpgcheck: yes
-    gpgkey: 'https://download.docker.com/linux/centos/gpg'
+- block:
+    - name: Add Docker GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        keyring: /etc/apt/keyrings/docker-archive-keyring.gpg
 
-- name: Adding Docker-CE repo keys
-  rpm_key:
-    state: present
-    key: 'https://download.docker.com/linux/centos/gpg'
-  retries: 5
-  delay: 5
+    - name: Add Docker APT repository
+      apt_repository:
+        repo: deb [arch=amd64 signed-by=/etc/apt/keyrings/docker-archive-keyring.gpg] https://download.docker.com/{{ ansible_system | lower }}/{{ ansible_distribution | lower }} {{ ansible_distribution_release }} stable
+        filename: docker-ce
 
-- name: Adding Kubernetes repo
-  yum_repository:
-    name: kubernetes
-    description: Kubernetes
-    baseurl: 'https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64'
-    enabled: yes
-    gpgcheck: yes
-    repo_gpgcheck: yes
-    gpgkey:
-      - 'https://packages.cloud.google.com/yum/doc/yum-key.gpg'
-      - 'https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg'
+    - name: Add Kubernetes GPG key
+      apt_key:
+        url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+        keyring: /etc/apt/keyrings/kubernetes-archive-keyring.gpg
 
-- name: Adding Kubernetes repo keys
-  rpm_key:
-    state: present
-    key: "{{ item }}"
-  with_items:
-    - 'https://packages.cloud.google.com/yum/doc/yum-key.gpg'
-    - 'https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg'
-  retries: 5
-  delay: 5
+    - name: Add Kubernetes APT repository
+      apt_repository:
+        # FIXME: until there will be a jammy repository we will fix the release
+        #        to xenial
+        #repo: deb [arch=amd64 signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-{{ ansible_distribution_release }} main
+        repo: deb [arch=amd64 signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main
+        filename: kubernetes
+  when:
+    - ansible_os_family == 'Debian'
 
 - name: Installing required packages
-  yum:
-   name: "{{ k8s_packages }}"
+  package:
+   name: "{{ lookup('vars', 'k8s_' + ansible_os_family  + '_packages') }}"
    state: present
 
-- name: Remove 'cri' from disabled plugins in /etc/containerd/config.toml
-  replace:
-    path: /etc/containerd/config.toml
-    regexp: '^disabled_plugins(.*)'
-    replace: '#disabled_plugins\1'
+- block:
+    - name: Check /etc/containerd/config.toml for SystemdCgroup set to true
+      command: grep 'SystemdCgroup = true' /etc/containerd/config.toml
+      register: containerd_systemdcgroup
+      changed_when: false
+      failed_when: false
+
+    - block:
+        - name: Expand containerd configuration in /etc/containerd/config.toml
+          shell: |
+            set -o pipefail
+            containerd config default > /etc/containerd/config.toml
+          args:
+            executable: /bin/bash
+
+        - name: Fix SystemdCgroup to true in /etc/containerd/config.toml
+          replace:
+            path: /etc/containerd/config.toml
+            regexp: 'SystemdCgroup = false'
+            replace: 'SystemdCgroup = true'
+          notify:
+            - restart containerd daemon
+      when:
+        - containerd_systemdcgroup.rc != 0
   when:
     - k8s_container_service == 'containerd'
-  notify:
-    - restart containerd daemon
 
 - name: Starting and Enabling the required services
   service:
@@ -129,9 +186,12 @@
     - k8s_docker_daemon_options is defined
   notify: restart docker daemon
 
+- name: Flush handlers
+  meta: flush_handlers
+
 - block:
     - name: Installing required packages
-      yum:
+      package:
        name: firewalld
        state: present
 
@@ -148,6 +208,8 @@
         state: enabled
         permanent: yes
         immediate: yes
+      notify: 
+        - restart firewalld daemon
 
     - name: Enable VRRP protocol for multi master setup
       firewalld:
@@ -159,6 +221,8 @@
         - k8s_role is defined
         - k8s_role == 'master'
         - k8s_multi_master | bool
+      notify: 
+        - restart firewalld daemon
 
     - name: Allow master node network ports in Firewalld
       firewalld:
@@ -171,6 +235,8 @@
       when:
         - k8s_role is defined
         - k8s_role == 'master'
+      notify: 
+        - restart firewalld daemon
 
     - name: Allow worker node network ports in Firewalld
       firewalld:
@@ -183,6 +249,8 @@
       when:
         - k8s_role is defined
         - k8s_role == 'worker'
+      notify: 
+        - restart firewalld daemon
 
     - name: Allow NodePort network ports in Firewalld
       firewalld:
@@ -195,6 +263,8 @@
       when:
         - k8s_role is defined
         - k8s_role == 'worker' or (run_non_infra_pods is defined and run_non_infra_pods|bool)
+      notify: 
+        - restart firewalld daemon
 
     - name: Allow network addon ports
       firewalld:
@@ -206,6 +276,8 @@
         - "{{ k8s_network_addon_ports }}"
       when:
         - k8s_role is defined
+      notify: 
+        - restart firewalld daemon
 
     - name: Enable IPIP protocol when using Calico
       firewalld:
@@ -215,6 +287,8 @@
         immediate: yes
       when:
         - k8s_network_addon == 'calico'
+      notify: 
+        - restart firewalld daemon
 
     - name: Allow MetalLB ports in Firewalld
       firewalld:
@@ -226,6 +300,19 @@
         - "{{ k8s_metallb_ports }}"
       when:
         - k8s_metallb_enable|bool
+      notify: 
+        - restart firewalld daemon
+
+    - name: Enable firewalld public zone on interface cni0 when using flannel
+      firewalld:
+        zone: public
+        interface: cni0
+        permanent: true
+        state: enabled
+      when:
+        - k8s_network_addon == 'flannel'
+      notify: 
+        - restart firewalld daemon
   when:
     - k8s_firewalld_enable|bool
 

@@ -19,7 +19,7 @@ vrrp_instance VI_1 {
     state BACKUP
     priority 100
 {% endif %}
-    interface {{ k8s_balancer_interface }}
+    interface {{ k8s_balancer_interface | default(ansible_default_ipv4.interface) }}
     virtual_router_id 60
     authentication {
         auth_type PASS
