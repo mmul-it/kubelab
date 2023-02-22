@@ -1,12 +1,17 @@
-# Kubernetes role for Ansible
+# Kubelab: a Kubernetes role for Ansible
 
-This role can be used to deploy a Kubernetes cluster with a fully automated and idempotent implementation of several components.
+This role can be used to deploy a Kubernetes cluster with a fully automated and
+idempotent implementation of several components.
+
+[![Lint the project](https://github.com/mmul-it/kubelab/actions/workflows/main.yml/badge.svg)](https://github.com/mmul-it/kubelab/actions/workflows/main.yml)
+[![Ansible Galaxy](https://img.shields.io/badge/ansible--galaxy-kubelab-blue.svg)](https://galaxy.ansible.com/mmul/kubelab)
 
 ## Features
 
 This role can be configured to enable all of these features:
 
-- **Single or multi master cluster implementation** with HAProxy and Keepalived for High Availability.
+- **Single or multi master cluster implementation** with HAProxy and Keepalived
+  for High Availability.
 
 - **Multi network add-ons** Flannel and Calico.
 
@@ -24,7 +29,9 @@ This role can be configured to enable all of these features:
 
 ## Install the cluster with the Ansible Playbook
 
-Check out the main [README](https://github.com/mmul-it/ansible/blob/master/README.md) for details on how to install the requirements, you'll typically use the role by launching the `kubernetes.yml` playbook, like this:
+Check out the main [README](https://github.com/mmul-it/ansible/blob/master/README.md)
+for details on how to install the requirements, you'll typically use the role by
+launching the `kubernetes.yml` playbook, like this:
 
 ```
 user@lab ~ # ansible-playbook \
@@ -32,7 +39,8 @@ user@lab ~ # ansible-playbook \
 $HOME/Work/Git/github.com/mmul-it/ansible/kubernetes.yml
 ```
 
-Note that you can chose anytime to reset everything by passing `k8s_reset` as `true`:
+Note that you can chose anytime to reset everything by passing `k8s_reset` as
+`true`:
 
 ```
 user@lab ~ # ansible-playbook \
@@ -41,11 +49,13 @@ $HOME/Work/Git/github.com/mmul-it/ansible/kubernetes.yml \
 -e k8s_reset=true
 ```
 
-<u><strong>NOTE</strong></u>: this will reset your entire cluster, so use it with caution.
+<u><strong>NOTE</strong></u>: this will reset your entire cluster, so use it
+with caution.
 
 ## Interact with the cluster after the installation
 
-Once the playbook completes its execution the best way to interact with the cluster is by using the `kubectl` command that can be installed as follows:
+Once the playbook completes its execution the best way to interact with the
+cluster is by using the `kubectl` command that can be installed as follows:
 
 ```
 user@lab ~ # curl -s -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
@@ -55,13 +65,16 @@ user@lab ~ # chmod +x kubectl
 user@lab ~ # sudo mv kubectl /usr/local/bin
 ```
 
-The Kubernetes role produces a local directory which contains the main kubeconfig file, named admin.conf. The easiest way to use it is by exporting the KUBECONFIG variable, like this:
+The Kubernetes role produces a local directory which contains the main
+kubeconfig file, named admin.conf. The easiest way to use it is by exporting the
+KUBECONFIG variable, like this:
 
 ```
 user@lab ~ # export KUBECONFIG=~/kubernetes/admin.conf 
 ```
 
-From now until the end of the session, every time you'll `kubectl` it will rely on the credentials contained in that file:
+From now until the end of the session, every time you'll `kubectl` it will rely
+on the credentials contained in that file:
 
 ```
 user@lab ~ # kubectl cluster-info
@@ -78,13 +91,16 @@ kubernetes-3   Ready    control-plane   26h   v1.25.3
 kubernetes-4   Ready    <none>          26h   v1.25.3
 ```
 
-It is also possible to use different users to log into the cluster, check the [Users](#Users) section for details.
+It is also possible to use different users to log into the cluster, check the
+[Users](#Users) section for details.
 
 ## Configuration
 
 ### Inventory
 
-A typical inventory depends on what you want to deploy, looking at the example `lab`  you can declare inside the hosts file (see [inventory/lab/hosts](https://github.com/mmul-it/ansible/blob/master/inventory/lab/hosts)) all the nodes:
+A typical inventory depends on what you want to deploy, looking at the example
+`lab`  you can declare inside the hosts file (see [inventory/lab/hosts](https://github.com/mmul-it/ansible/blob/master/inventory/lab/hosts))
+all the nodes:
 
 ```ini
 # Kubernetes hosts
@@ -95,13 +111,17 @@ kubernetes-3 k8s_role=master run_non_infra_pods=true
 kubernetes-4 k8s_role=worker
 ```
 
-You'll set which nodes will act as master and also whether or not those will run non infrastructure pods (so to make the master also a worker).
+You'll set which nodes will act as master and also whether or not those will run
+non infrastructure pods (so to make the master also a worker).
 
-Then you can define, inside group file (see [inventory/lab/group_vars/k8s_nodes.yml](https://github.com/mmul-it/ansible/blob/master/inventory/lab/group_vars/k8s_nodes.yml)), all the additional configurations, depending on what do you want to implement.
+Then you can define, inside group file (see
+[inventory/lab/group_vars/k8s_nodes.yml](https://github.com/mmul-it/ansible/blob/master/inventory/lab/group_vars/k8s_nodes.yml)),
+all the additional configurations, depending on what do you want to implement.
 
 ### Kubernetes cluster
 
-If you want to implement a multi-master, high availability cluster you'll need to specify these variables:
+If you want to implement a multi-master, high availability cluster you'll need
+to specify these variables:
 
 ```yaml
 k8s_cluster_name: kubelab
@@ -127,15 +147,20 @@ k8s_master_ports:
   - 10259/tcp
 ```
 
-This will bring up a cluster starting from node `kubernetes-1` enabling multi master via `k8s_multi_master` and setting the VIP address and the interface.
+This will bring up a cluster starting from node `kubernetes-1` enabling multi
+master via `k8s_multi_master` and setting the VIP address and the interface.
 
-**<u>Note</u>**: you'll want to change both `k8s_master_cert_key` and `k8s_balancer_password` for better security.
+**<u>Note</u>**: you'll want to change both `k8s_master_cert_key` and
+`k8s_balancer_password` for better security.
 
-**<u>Note</u>**: it is possible to have a more atomic way to configure pods network cidr, worker ports , nodeports ranges and firewall management, you can check [the defaults file](https://github.com/mmul-it/ansible/blob/master/roles/kubernetes/defaults/main.yml#L50-L67).
+**<u>Note</u>**: it is possible to have a more atomic way to configure pods
+network cidr, worker ports , nodeports ranges and firewall management, you can
+check [the defaults file](https://github.com/mmul-it/ansible/blob/master/roles/kubernetes/defaults/main.yml#L50-L67).
 
 ### Network Add-on
 
-The Kubernetes role supports Flannel and Calico network add-ons. The configuration depends on which add-on you want to implement.
+The Kubernetes role supports Flannel and Calico network add-ons. The
+configuration depends on which add-on you want to implement.
 
 For Flannel you'll need something like:
 
@@ -157,9 +182,13 @@ The Kubernetes dashboard can be implemented by adding this to the configuration:
 k8s_dashboard_enable: true
 ```
 
-Once the installation completes the easiest way to access the dashboard is by using the `kubectl proxy` and then access the related url: http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/
+Once the installation completes the easiest way to access the dashboard is by
+using the `kubectl proxy` and then access the related url
+[http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/](http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/).
 
-A login prompt will be presented, and you can login by passing a token. By default the Kubernetes role creates a user named `dashboard-user` (you can override it).
+A login prompt will be presented, and you can login by passing a token. By
+default the Kubernetes role creates a user named `dashboard-user` (you can
+override it).
 
 To retrieve the token you'll need use `kubectl`, like this:
 
@@ -168,7 +197,8 @@ user@lab ~ # kubectl -n kubernetes-dashboard create token dashboard-user
 <YOUR TOKEN>
 ```
 
-Copy and paste the output of the above command inside the prompt and you'll complete the login.
+Copy and paste the output of the above command inside the prompt and you'll
+complete the login.
 
 ### Users
 
@@ -199,7 +229,8 @@ users-rolebindings.yaml
 users-roles.yaml
 ```
 
-The `users.conf` file can then be used to access the cluster with this user, like this:
+The `users.conf` file can then be used to access the cluster with this user,
+like this:
 
 ```
 user@lab ~ # export KUBECONFIG=~/kubernetes/users/users.conf 
@@ -223,7 +254,8 @@ No resources found in default namespace.
 
 ### Ceph CSI
 
-The Kubernetes role actually supports the implementation of the Ceph CSI StorageClass. It can be defined as follows:
+The Kubernetes role actually supports the implementation of the Ceph CSI
+StorageClass. It can be defined as follows:
 
 ```yaml
 k8s_ceph_csi_enable: true
@@ -284,7 +316,9 @@ spec:
 
 ### MetalLB
 
-To enable [MetalLB](https://metallb.universe.tf/) a load-balancer implementation for baremetal Kubernetes clusters, using standard routing protocols, it is sufficient to declare:
+To enable [MetalLB](https://metallb.universe.tf/) a load-balancer implementation
+for baremetal Kubernetes clusters, using standard routing protocols, it is
+sufficient to declare:
 
 ```yaml
 k8s_metallb_enable: true
@@ -293,11 +327,14 @@ k8s_metallb_pools:
     addresses: '192.168.122.100-192.168.122.130'
 ```
 
-Then it will be possible to use this LoadBalancer to create IPs inside the declared pool range (check next `ingress-nginx` example to understand how).
+Then it will be possible to use this LoadBalancer to create IPs inside the
+declared pool range (check next `ingress-nginx` example to understand how).
 
 ### Ingress NGINX
 
-To enable [Ingress NGINX](https://github.com/kubernetes/ingress-nginx), an Ingress controller for Kubernetes using NGINX as a reverse proxy and load balancer, it is sufficient to declare:
+To enable [Ingress NGINX](https://github.com/kubernetes/ingress-nginx), an
+Ingress controller for Kubernetes using NGINX as a reverse proxy and load
+balancer, it is sufficient to declare:
 
 ```yaml
 k8s_ingress_nginx_enable: true
@@ -315,11 +352,14 @@ k8s_ingress_nginx_services:
         protocol: TCP
 ```
 
-This will install everything related to the controller, and assign the `loadBalancerIP` that is part of the range supplied by MetalLB, by exposing both `80` and `443` ports.
+This will install everything related to the controller, and assign the
+`loadBalancerIP` that is part of the range supplied by MetalLB, by exposing both
+`80` and `443` ports.
 
 ### Cert Manager
 
-To enable [Cert Manager](https://cert-manager.io/), a controller to automate certificate management in Kubernetes, it is sufficient to declare:
+To enable [Cert Manager](https://cert-manager.io/), a controller to automate
+certificate management in Kubernetes, it is sufficient to declare:
 
 ```yaml
 k8s_cert_manager_enable: true
@@ -337,9 +377,12 @@ k8s_cert_manager_issuers:
             class: nginx
 ```
 
-This will install everything related to the controller and create a cluster issuer that will use `letsencrypt` with `http01` challenge resolution, via NGINX ingress class.
+This will install everything related to the controller and create a cluster
+issuer that will use `letsencrypt` with `http01` challenge resolution, via NGINX
+ingress class.
 
-Once everything is installed and you want to expose an application, you can test everything by using something like this yaml:
+Once everything is installed and you want to expose an application, you can test
+everything by using something like this yaml:
 
 ```yaml
 apiVersion: v1
@@ -414,10 +457,13 @@ spec:
     secretName: nginx.apps.kubelab.mmul.it
 ```
 
-If you look specifically on the last resource, the `Ingress` named `nginx-ingress` you will see two important sections:
+If you look specifically on the last resource, the `Ingress` named
+`nginx-ingress` you will see two important sections:
 
-- Under `metadata` -> `annotations` the annotation`cert-manager.io/cluster-issuer: letsencrypt`
+- Under `metadata` -> `annotations` the annotation
+  `cert-manager.io/cluster-issuer: letsencrypt`
 
 - Under `spec:` -> `tls` the host declaration.
 
-With this in place, after some time, you'll have your cert served for the exposed service.
+With this in place, after some time, you'll have your cert served for the
+exposed service.
