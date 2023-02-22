@@ -6,7 +6,7 @@ k8s_wait_timeout: 600
 
 k8s_epel_enable: "{{ ansible_distribution_major_version == '7' | bool }}"
 
-k8s_Debian_packages:
+k8s_debian_packages:
   - apt-transport-https
   - ca-certificates
   - curl
@@ -19,7 +19,7 @@ k8s_Debian_packages:
   - kubeadm
   - kubectl
 
-k8s_RedHat_packages:
+k8s_redhat_packages:
   - containerd.io
   - kubeadm
   - kubectl
@@ -52,7 +52,7 @@ k8s_multi_master: false
 #
 # Multi master - Define balancer port
 # k8s_balancer_port: 8443
-# 
+#
 # Multi master - Define balancer password
 # If you need to generate password just use:
 # openssl rand -hex 7
@@ -65,7 +65,7 @@ k8s_master_ports:
   - 10257/tcp
   - 10259/tcp
   # Multi master - Remember to enable the load balancer port
-  #- 8443/tcp
+  # - 8443/tcp
 
 k8s_worker_ports:
   - 10250/tcp
@@ -86,10 +86,10 @@ k8s_network_addon_ports:
   - 5473/tcp
 
 # Enable if you need to change Docker native cgroup, that in CentOS 7 is cgroupfs
-#k8s_docker_native_cgroupdriver: 'systemd'
-#k8s_docker_daemon_options:
-#  exec-opts:
-#    - native.cgroupdriver={{ k8s_docker_native_cgroupdriver }}
+# k8s_docker_native_cgroupdriver: 'systemd'
+# k8s_docker_daemon_options:
+#   exec-opts:
+#     - native.cgroupdriver={{ k8s_docker_native_cgroupdriver }}
 
 k8s_dashboard_enable: false
 k8s_dashboard_namespace: kubernetes-dashboard

@@ -1,0 +1,9 @@
+parseable: true
+quiet: false
+skip_list:
+  # If we follow this rule the tasks will become undreadable
+  - 'key-order[task]'
+  # We need for tests to include a path instead of a name for the role
+  - 'role-name[path]'
+use_default_rules: true
+verbosity: 0

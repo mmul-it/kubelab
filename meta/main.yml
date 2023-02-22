@@ -12,13 +12,13 @@ galaxy_info:
   platforms:
     - name: EL
       versions:
-        - all
-    - name: Fedora
+        - '8'
+        - '9'
+    - name: Ubuntu
       versions:
-        - all
+        - jammy
   galaxy_tags:
     - kubernetes
     - kubelab
 
-dependencies:
-  - common_handlers
+dependencies: []

@@ -1,35 +1,47 @@
 ---
 
-- name: "Create {{ k8s_user.namespace }} namespace for user {{ k8s_user.name }}"
-  local_action:
-    module: kubernetes.core.k8s
+- name: "Create namespace {{ k8s_user.namespace }}"
+  kubernetes.core.k8s:
     kubeconfig: "{{ k8s_kubeconfig }}"
     kind: Namespace
     name: "{{ k8s_user.namespace }}"
     state: present
+  delegate_to: localhost
 
-- name: "Check if certificates path for {{ k8s_user.name }} already exists"
-  local_action:
-    module: ansible.builtin.stat
+- name: "Check if certificates path already exists for {{ k8s_user.name }}"
+  ansible.builtin.stat:
     path: "{{ k8s_local_workdir }}/users/{{ k8s_user.name }}.crt"
   register: k8s_user_cert
+  delegate_to: localhost
 
-- block:
+- name: Certficiates generation
+  block:
     - name: "Generate key for user {{ k8s_user.name }}"
-      local_action:
-        module: ansible.builtin.command openssl genrsa -out {{ k8s_local_workdir }}/users/{{ k8s_user.name }}.key 2048
+      ansible.builtin.command: openssl genrsa -out {{ k8s_local_workdir }}/users/{{ k8s_user.name }}.key 2048
+      args:
+        creates: "{{ k8s_local_workdir }}/users/{{ k8s_user.name }}.key"
+      delegate_to: localhost
 
     - name: "Generate csr for user {{ k8s_user.name }}"
-      local_action:
-        module: ansible.builtin.command openssl req -new -key {{ k8s_local_workdir }}/users/{{ k8s_user.name }}.key -out {{ k8s_local_workdir }}/users/{{ k8s_user.name }}.csr -subj "/CN={{ k8s_user.name }}/O={{ k8s_user.namespace }}"
+      ansible.builtin.command: openssl req -new -key {{ k8s_local_workdir }}/users/{{ k8s_user.name }}.key
+         -out {{ k8s_local_workdir }}/users/{{ k8s_user.name }}.csr
+         -subj "/CN={{ k8s_user.name }}/O={{ k8s_user.namespace }}"
+      args:
+        creates: "{{ k8s_local_workdir }}/users/{{ k8s_user.name }}.csr"
+      delegate_to: localhost
 
     - name: "Generate key for user {{ k8s_user.name }}"
-      local_action:
-        module: ansible.builtin.command openssl x509 -req -in {{ k8s_local_workdir }}/users/{{ k8s_user.name }}.csr -CA {{ k8s_local_workdir }}/pki/ca.crt -CAkey {{ k8s_local_workdir }}/pki/ca.key -CAcreateserial -out {{ k8s_local_workdir }}/users/{{ k8s_user.name }}.crt -days {{ k8s_user.cert_expire_days }}
+      ansible.builtin.command: openssl x509 -req -in {{ k8s_local_workdir }}/users/{{ k8s_user.name }}.csr
+         -CA {{ k8s_local_workdir }}/pki/ca.crt -CAkey {{ k8s_local_workdir }}/pki/ca.key
+         -CAcreateserial -out {{ k8s_local_workdir }}/users/{{ k8s_user.name }}.crt
+         -days {{ k8s_user.cert_expire_days }}
+      args:
+        creates: "{{ k8s_local_workdir }}/users/{{ k8s_user.name }}.crt"
+      delegate_to: localhost
 
     - name: "Force update context in the kube config (since there's a new certificate)"
-      local_action:
-        module: ansible.builtin.set_fact
+      ansible.builtin.set_fact:
         k8s_force_users_kubeconfig_generation: true
+      delegate_to: localhost
   when:
     - not k8s_user_cert.stat.exists|bool

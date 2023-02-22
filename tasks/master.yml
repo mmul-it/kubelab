@@ -1,67 +1,71 @@
 ---
 
 - name: Reset Kubernetes master node
-  command: kubeadm reset -f
+  ansible.builtin.command: kubeadm reset -f
+  args:
+    removes: '/etc/kubernetes/manifests/*'
   when:
-    - k8s_reset|bool
+    - k8s_reset | bool
   become: true
 
-- import_tasks: node_status.yml
+- name: Check node status
+  ansible.builtin.import_tasks: node_status.yml
 
 - name: Set control plane endpoint for single node
-  set_fact:
+  ansible.builtin.set_fact:
     k8s_control_plane_endpoint: "{{ hostvars[k8s_master_node]['ansible_default_ipv4']['address'] }}"
   when: not k8s_multi_master | bool
 
 - name: Set control plane endpoint for multi master
-  set_fact:
+  ansible.builtin.set_fact:
     k8s_control_plane_endpoint: "{{ k8s_balancer_VIP }}:{{ k8s_balancer_port }}"
   when: k8s_multi_master | bool
 
 - name: Multi master directories and files
   block:
     - name: Directories
-      file:
+      ansible.builtin.file:
         path: "/usr/local/etc/{{ item }}"
         state: directory
+        mode: '0750'
       with_items:
         - haproxy
         - keepalived
 
     - name: Create haproxy.cfg file
-      template:
+      ansible.builtin.template:
         src: multi-master/haproxy.cfg.j2
         dest: /usr/local/etc/haproxy/haproxy.cfg
         owner: root
         group: root
-        mode: 0644
+        mode: '0644'
 
     - name: Create keepalived.conf file
-      template:
+      ansible.builtin.template:
         src: multi-master/keepalived.conf.j2
         dest: /usr/local/etc/keepalived/keepalived.conf
         owner: root
         group: root
-        mode: 0644
+        mode: '0644'
 
     - name: Create pod configurations"
-      template:
+      ansible.builtin.template:
         src: "templates/multi-master/{{ item }}_pod.yaml.j2"
         dest: "/etc/kubernetes/manifests/{{ item }}.yaml"
         owner: root
         group: root
-        mode: 0644
+        mode: '0644'
       with_items:
         - haproxy
         - keepalived
 
     - name: Create keepalived check script
-      template:
+      ansible.builtin.template:
         src: multi-master/check_apiserver.sh.j2
         dest: /usr/local/etc/keepalived/check_apiserver.sh
         owner: root
         group: root
-        mode: 0755
+        mode: '0755'
   become: true
   when:
     - k8s_multi_master | bool
@@ -69,40 +73,46 @@
 - name: Set up the master node
   block:
     - name: Pulling images required for setting up a Kubernetes cluster
-      command: kubeadm config images pull
+      ansible.builtin.command: kubeadm config images pull
+      changed_when: true
 
     - name: Create config.yaml template
-      template:
+      ansible.builtin.template:
         src: config.yaml.j2
         dest: /etc/kubernetes/config.yaml
+        mode: '0640'
 
     - name: Initialize Kubernetes cluster
-      command: |
+      ansible.builtin.command: |
         kubeadm init \
         --config=/etc/kubernetes/config.yaml \
         --upload-certs
+      changed_when: true
   become: true
   when:
     - k8s_node_status != "Ready"
     - inventory_hostname == k8s_master_node
 
 - name: Copy remote /etc/kubernetes/admin.conf on local directory
-  fetch:
+  ansible.builtin.fetch:
     src: '/etc/kubernetes/admin.conf'
     dest: "{{ k8s_local_workdir }}/"
-    flat: yes
+    flat: true
+    mode: '0640'
   become: true
   when:
     - inventory_hostname == k8s_master_node
 
 - name: Create Network Add-on local folder
-  local_action:
-    module: ansible.builtin.file
+  ansible.builtin.file:
     path: "{{ k8s_local_workdir }}/network-addons"
     state: directory
+    mode: '0750'
   run_once: true
+  delegate_to: localhost
 
-- include_tasks: create-resource-from-template.yml
+- name: Create Network Add-on resource
+  ansible.builtin.include_tasks: create-resource-from-template.yml
   with_items:
     # Network Add-on deployment
     - name: "network-addons/{{ k8s_network_addon }}"
@@ -111,7 +121,7 @@
 - name: Set kubeadm join credentials from master node
   block:
     - name: Get Token from Kubernetes
-      shell: |
+      ansible.builtin.shell: |
         set -o pipefail
         if [ !$(kubeadm token list) ]; then kubeadm token create ; fi
         kubeadm token list | grep 'system:bootstrappers:kubeadm' | awk '{print $1}'
@@ -122,11 +132,11 @@
       become: true
 
     - name: Set fact k8s_token_output
-      set_fact:
+      ansible.builtin.set_fact:
         k8s_token: "{{ k8s_token_output.stdout }}"
 
     - name: Get SHA256 Discovery Token CA Cert Hash from Kubernetes
-      shell: |
+      ansible.builtin.shell: |
         openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt | \
         openssl rsa -pubin -outform der 2>/dev/null | \
         openssl dgst -sha256 -hex | \
@@ -136,26 +146,27 @@
       become: true
 
     - name: Set fact k8s_discovery_token_ca_cert_hash
-      set_fact:
+      ansible.builtin.set_fact:
         k8s_discovery_token_ca_cert_hash: "{{ k8s_discovery_token_ca_cert_hash_output.stdout }}"
   when:
     - inventory_hostname == k8s_master_node
 
 - name: Join control-plane nodes with kubernetes master
-  command: |
+  ansible.builtin.command: |
     kubeadm join {{ k8s_control_plane_endpoint }} \
     --token {{ hostvars[k8s_master_node]['k8s_token'] }} \
     --discovery-token-ca-cert-hash sha256:{{ hostvars[k8s_master_node]['k8s_discovery_token_ca_cert_hash'] }} \
     --control-plane \
     --certificate-key {{ k8s_master_cert_key }}
+  args:
+    creates: /etc/kubernetes/kubelet.conf
   become: true
   when:
     - k8s_node_status != 'Ready'
     - inventory_hostname != k8s_master_node
 
 - name: Enable master to run non infrastructure pods
-  local_action:
-    module: kubernetes.core.k8s_taint
+  kubernetes.core.k8s_taint:
     kubeconfig: "{{ k8s_kubeconfig }}"
     name: "{{ inventory_hostname }}"
     state: absent
@@ -165,3 +176,4 @@
   when:
     - run_non_infra_pods is defined
     - run_non_infra_pods|bool
+  delegate_to: localhost

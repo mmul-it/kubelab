@@ -1,20 +1,22 @@
 ---
 
 - name: Create Dashboard local folder
-  local_action:
-    module: ansible.builtin.file
+  ansible.builtin.file:
     path: "{{ k8s_local_workdir }}/dashboard"
     state: directory
+    mode: '0750'
+  delegate_to: localhost
 
 - name: Create Dashboard namespace
-  local_action:
-    module: kubernetes.core.k8s
+  kubernetes.core.k8s:
     kubeconfig: "{{ k8s_kubeconfig }}"
     kind: Namespace
     name: "{{ k8s_dashboard_namespace }}"
     state: present
+  delegate_to: localhost
 
-- include_tasks: create-resource-from-template.yml
+- name: Create Dashboard resource files
+  ansible.builtin.include_tasks: create-resource-from-template.yml
   with_items:
     # Dashboard User Service Account, Role and Role Binding
     - name: dashboard/dashboard-user
