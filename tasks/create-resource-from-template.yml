@@ -1,18 +1,19 @@
 ---
 
 # Create resource yaml
-- name: "Create {{ item.name }} yaml"
-  local_action:
-    module: ansible.builtin.template
+- name: "Create yaml {{ item.name }}"
+  ansible.builtin.template:
     src: "templates/{{ item.name }}.yaml.j2"
-    dest:  "{{ k8s_local_workdir }}/{{ item.name }}.yaml"
+    dest: "{{ k8s_local_workdir }}/{{ item.name }}.yaml"
+    mode: '0640'
+  delegate_to: localhost
 
 # Resource deployment
-- name: "Create {{ item.name }} resource"
-  local_action:
-    module: kubernetes.core.k8s
+- name: "Create resource {{ item.name }}"
+  kubernetes.core.k8s:
     kubeconfig: "{{ k8s_kubeconfig }}"
     state: present
     src: "{{ k8s_local_workdir }}/{{ item.name }}.yaml"
     wait: "{{ item.wait | default(true) }}"
     wait_timeout: "{{ item.timeout | default(k8s_wait_timeout) }}"
+  delegate_to: localhost

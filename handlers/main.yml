@@ -1,22 +1,22 @@
 ---
 
-- name: restart docker daemon
-  service:
+- name: Restart docker
+  ansible.builtin.service:
     name: docker
     state: restarted
-    enabled: yes
+    enabled: true
   become: true
 
-- name: restart containerd daemon
-  service:
+- name: Restart containerd
+  ansible.builtin.service:
     name: containerd
     state: restarted
-    enabled: yes
+    enabled: true
   become: true
 
-- name: restart firewalld daemon
-  service:
+- name: Restart firewalld
+  ansible.builtin.service:
     name: firewalld
     state: restarted
-    enabled: yes
+    enabled: true
   become: true

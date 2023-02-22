@@ -1,105 +1,108 @@
 ---
 
 - name: Remove AppArmor
-  package:
+  ansible.builtin.package:
     name: apparmor
     state: absent
   when:
     - ansible_os_family == 'Debian'
 
 - name: Checking active SWAP
-  command: swapon -s
+  ansible.builtin.command: swapon -s
   register: active_swap
   changed_when: false
 
 - name: Disabling SWAP since kubernetes can't work with swap enabled
-  command: swapoff -a
+  ansible.builtin.command: swapoff -a
+  changed_when: true
   when:
     - active_swap.stdout != ""
 
 - name: Disabling SWAP in fstab since kubernetes can't work with swap enabled
-  replace:
+  ansible.builtin.replace:
     path: /etc/fstab
     regexp: '^([^#].* swap .*)$'
     replace: '#\1'
 
 - name: Ensure br_netfilter is enabled
-  modprobe:
+  community.general.modprobe:
     name: br_netfilter
     state: present
 
 - name: Persist br_netfilter after reboots
-  copy:
+  ansible.builtin.copy:
     dest: /etc/modules-load.d/br_netfilter.conf
     content: "br_netfilter"
+    mode: '0640'
 
 - name: Enable /proc/sys/net/bridge/bridge-nf-call-iptables
-  sysctl:
+  ansible.posix.sysctl:
     name: net.bridge.bridge-nf-call-iptables
     value: 1
-    sysctl_set: yes
+    sysctl_set: true
     state: present
-    reload: yes
+    reload: true
 
 - name: Enable /proc/sys/net/ipv4/ip_forward
-  sysctl:
+  ansible.posix.sysctl:
     name: net.ipv4.ip_forward
     value: 1
-    sysctl_set: yes
+    sysctl_set: true
     state: present
-    reload: yes
+    reload: true
 
 - name: Set hostname
-  hostname:
+  ansible.builtin.hostname:
     name: "{{ inventory_hostname }}"
 
 - name: Build hosts file
-  lineinfile:
+  ansible.builtin.lineinfile:
     dest: /etc/hosts
     regexp: '.*{{ item }}$'
     line: "{{ hostvars[item].ansible_default_ipv4.address }} {{ item }}"
     state: present
   with_items: "{{ groups['k8s_nodes'] }}"
 
-- block:
+- name: EL repositories
+  block:
     - name: Adding EPEL repo
-      yum:
+      ansible.builtin.yum:
         name: "https://dl.fedoraproject.org/pub/epel/epel-release-latest-{{ ansible_distribution_major_version }}.noarch.rpm"
         state: present
       when:
         - k8s_epel_enable|bool
 
     - name: Adding Docker-CE repo
-      yum_repository:
+      ansible.builtin.yum_repository:
         name: docker-ce
         description: Docker-CE
         baseurl: "https://download.docker.com/linux/centos/{{ ansible_distribution_major_version }}/$basearch/stable"
-        enabled: yes
-        gpgcheck: yes
-        repo_gpgcheck: yes
+        enabled: true
+        gpgcheck: true
+        repo_gpgcheck: true
         gpgkey: 'https://download.docker.com/linux/centos/gpg'
 
     - name: Adding Docker-CE repo keys
-      rpm_key:
+      ansible.builtin.rpm_key:
         state: present
         key: 'https://download.docker.com/linux/centos/gpg'
       retries: 5
       delay: 5
 
     - name: Adding Kubernetes repo
-      yum_repository:
+      ansible.builtin.yum_repository:
         name: kubernetes
         description: Kubernetes
         baseurl: 'https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64'
-        enabled: yes
-        gpgcheck: yes
-        repo_gpgcheck: yes
+        enabled: true
+        gpgcheck: true
+        repo_gpgcheck: true
         gpgkey:
           - 'https://packages.cloud.google.com/yum/doc/yum-key.gpg'
           - 'https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg'
 
     - name: Adding Kubernetes repo keys
-      rpm_key:
+      ansible.builtin.rpm_key:
         state: present
         key: "{{ item }}"
       with_items:
@@ -110,211 +113,221 @@
   when:
     - ansible_os_family == 'RedHat'
 
-- block:
+- name: Debian systems repositories
+  block:
     - name: Add Docker GPG key
-      apt_key:
+      ansible.builtin.apt_key:
         url: https://download.docker.com/linux/ubuntu/gpg
         keyring: /etc/apt/keyrings/docker-archive-keyring.gpg
 
     - name: Add Docker APT repository
-      apt_repository:
-        repo: deb [arch=amd64 signed-by=/etc/apt/keyrings/docker-archive-keyring.gpg] https://download.docker.com/{{ ansible_system | lower }}/{{ ansible_distribution | lower }} {{ ansible_distribution_release }} stable
+      ansible.builtin.apt_repository:
+        repo: deb [arch=amd64 signed-by=/etc/apt/keyrings/docker-archive-keyring.gpg]
+               https://download.docker.com/{{ ansible_system | lower }}/{{ ansible_distribution | lower }}
+               {{ ansible_distribution_release }} stable
         filename: docker-ce
 
     - name: Add Kubernetes GPG key
-      apt_key:
+      ansible.builtin.apt_key:
         url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
         keyring: /etc/apt/keyrings/kubernetes-archive-keyring.gpg
 
     - name: Add Kubernetes APT repository
-      apt_repository:
+      ansible.builtin.apt_repository:
         # FIXME: until there will be a jammy repository we will fix the release
         #        to xenial
-        #repo: deb [arch=amd64 signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-{{ ansible_distribution_release }} main
-        repo: deb [arch=amd64 signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main
+        # repo: deb [arch=amd64 signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg]
+        #        https://apt.kubernetes.io/ kubernetes-{{ ansible_distribution_release }} main
+        repo: deb [arch=amd64 signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg]
+               https://apt.kubernetes.io/ kubernetes-xenial main
         filename: kubernetes
   when:
     - ansible_os_family == 'Debian'
 
 - name: Installing required packages
-  package:
-   name: "{{ lookup('vars', 'k8s_' + ansible_os_family  + '_packages') }}"
-   state: present
+  ansible.builtin.package:
+    name: "{{ lookup('vars', 'k8s_' + ansible_os_family | lower + '_packages') }}"
+    state: present
 
-- block:
+- name: Containerd setup
+  block:
     - name: Check /etc/containerd/config.toml for SystemdCgroup set to true
-      command: grep 'SystemdCgroup = true' /etc/containerd/config.toml
+      ansible.builtin.command: grep 'SystemdCgroup = true' /etc/containerd/config.toml
       register: containerd_systemdcgroup
       changed_when: false
       failed_when: false
 
-    - block:
+    - name: Containerd configuration
+      block:
         - name: Expand containerd configuration in /etc/containerd/config.toml
-          shell: |
+          ansible.builtin.shell: |
             set -o pipefail
             containerd config default > /etc/containerd/config.toml
+          changed_when: true
           args:
             executable: /bin/bash
 
         - name: Fix SystemdCgroup to true in /etc/containerd/config.toml
-          replace:
+          ansible.builtin.replace:
             path: /etc/containerd/config.toml
             regexp: 'SystemdCgroup = false'
             replace: 'SystemdCgroup = true'
           notify:
-            - restart containerd daemon
+            - Restart containerd
       when:
         - containerd_systemdcgroup.rc != 0
   when:
     - k8s_container_service == 'containerd'
 
 - name: Starting and Enabling the required services
-  service:
-   name: "{{ item }}"
-   state: started
-   enabled: yes
-   masked: no
+  ansible.builtin.service:
+    name: "{{ item }}"
+    state: started
+    enabled: true
+    masked: false
   with_items:
     - "{{ k8s_services }}"
 
 - name: Set Docker's daemon.json extra options
-  template:
+  ansible.builtin.template:
     dest: /etc/docker/daemon.json
     src: docker_daemon.json.j2
+    mode: '0640'
   when:
     - k8s_container_service == 'docker'
     - k8s_docker_daemon_options is defined
-  notify: restart docker daemon
+  notify: Restart docker
 
 - name: Flush handlers
-  meta: flush_handlers
+  ansible.builtin.meta: flush_handlers
 
-- block:
+- name: Firewall setup
+  block:
     - name: Installing required packages
-      package:
-       name: firewalld
-       state: present
+      ansible.builtin.package:
+        name: firewalld
+        state: present
 
     - name: Starting and Enabling the firewalld service
-      service:
-       name: firewalld
-       state: started
-       enabled: yes
-       masked: no
+      ansible.builtin.service:
+        name: firewalld
+        state: started
+        enabled: true
+        masked: false
 
     - name: Allow masquerade in Firewalld
-      firewalld:
-        masquerade: yes
+      ansible.posix.firewalld:
+        masquerade: true
         state: enabled
-        permanent: yes
-        immediate: yes
-      notify: 
-        - restart firewalld daemon
+        permanent: true
+        immediate: true
+      notify:
+        - Restart firewalld
 
     - name: Enable VRRP protocol for multi master setup
-      firewalld:
+      ansible.posix.firewalld:
         rich_rule: rule protocol value="vrrp" accept
         state: enabled
-        permanent: yes
-        immediate: yes
+        permanent: true
+        immediate: true
       when:
         - k8s_role is defined
         - k8s_role == 'master'
         - k8s_multi_master | bool
-      notify: 
-        - restart firewalld daemon
+      notify:
+        - Restart firewalld
 
     - name: Allow master node network ports in Firewalld
-      firewalld:
-       port: "{{ item }}"
-       state: enabled
-       permanent: yes
-       immediate: yes
+      ansible.posix.firewalld:
+        port: "{{ item }}"
+        state: enabled
+        permanent: true
+        immediate: true
       with_items:
         - "{{ k8s_master_ports }}"
       when:
         - k8s_role is defined
         - k8s_role == 'master'
-      notify: 
-        - restart firewalld daemon
+      notify:
+        - Restart firewalld
 
     - name: Allow worker node network ports in Firewalld
-      firewalld:
-       port: "{{ item }}"
-       state: enabled
-       permanent: yes
-       immediate: yes
+      ansible.posix.firewalld:
+        port: "{{ item }}"
+        state: enabled
+        permanent: true
+        immediate: true
       with_items:
         - "{{ k8s_worker_ports }}"
       when:
         - k8s_role is defined
         - k8s_role == 'worker'
-      notify: 
-        - restart firewalld daemon
+      notify:
+        - Restart firewalld
 
     - name: Allow NodePort network ports in Firewalld
-      firewalld:
-       port: "{{ item }}"
-       state: enabled
-       permanent: yes
-       immediate: yes
+      ansible.posix.firewalld:
+        port: "{{ item }}"
+        state: enabled
+        permanent: true
+        immediate: true
       with_items:
         - "{{ k8s_nodeport_ports }}"
       when:
         - k8s_role is defined
         - k8s_role == 'worker' or (run_non_infra_pods is defined and run_non_infra_pods|bool)
-      notify: 
-        - restart firewalld daemon
+      notify:
+        - Restart firewalld
 
     - name: Allow network addon ports
-      firewalld:
-       port: "{{ item }}"
-       state: enabled
-       permanent: yes
-       immediate: yes
+      ansible.posix.firewalld:
+        port: "{{ item }}"
+        state: enabled
+        permanent: true
+        immediate: true
       with_items:
         - "{{ k8s_network_addon_ports }}"
       when:
         - k8s_role is defined
-      notify: 
-        - restart firewalld daemon
+      notify:
+        - Restart firewalld
 
     - name: Enable IPIP protocol when using Calico
-      firewalld:
+      ansible.posix.firewalld:
         rich_rule: rule protocol value="ipip" accept
         state: enabled
-        permanent: yes
-        immediate: yes
+        permanent: true
+        immediate: true
       when:
         - k8s_network_addon == 'calico'
-      notify: 
-        - restart firewalld daemon
+      notify:
+        - Restart firewalld
 
     - name: Allow MetalLB ports in Firewalld
-      firewalld:
-       port: "{{ item }}"
-       state: enabled
-       permanent: yes
-       immediate: yes
+      ansible.posix.firewalld:
+        port: "{{ item }}"
+        state: enabled
+        permanent: true
+        immediate: true
       with_items:
         - "{{ k8s_metallb_ports }}"
       when:
         - k8s_metallb_enable|bool
-      notify: 
-        - restart firewalld daemon
+      notify:
+        - Restart firewalld
 
     - name: Enable firewalld public zone on interface cni0 when using flannel
-      firewalld:
+      ansible.posix.firewalld:
         zone: public
         interface: cni0
         permanent: true
         state: enabled
       when:
         - k8s_network_addon == 'flannel'
-      notify: 
-        - restart firewalld daemon
+      notify:
+        - Restart firewalld
   when:
     - k8s_firewalld_enable|bool
 
 - name: Flush handlers
-  meta: flush_handlers
+  ansible.builtin.meta: flush_handlers

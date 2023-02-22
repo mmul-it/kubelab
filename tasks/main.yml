@@ -1,61 +1,73 @@
 ---
 
-- import_tasks: common.yml
+- name: Apply common tasks to all nodes
+  ansible.builtin.import_tasks: common.yml
   become: true
 
-- block:
+- name: Setup local folders
+  block:
     - name: Set k8s_kubeconfig fact
-      local_action:
-        module: ansible.builtin.set_fact
+      ansible.builtin.set_fact:
         k8s_kubeconfig: "{{ k8s_local_workdir }}/admin.conf"
+      delegate_to: localhost
 
     - name: Reset Kubernetes local folder
-      local_action:
-        module: ansible.builtin.file
+      ansible.builtin.file:
         path: "{{ k8s_local_workdir }}"
         state: absent
+      delegate_to: localhost
       when:
         - k8s_reset|bool
 
     - name: Create Kubernetes local folder
-      local_action:
-        module: ansible.builtin.file
+      ansible.builtin.file:
         path: "{{ k8s_local_workdir }}"
         state: directory
+        mode: '0750'
+      delegate_to: localhost
   run_once: true
 
-- import_tasks: master.yml
+- name: Master tasks
+  ansible.builtin.import_tasks: master.yml
   when:
     - k8s_role is defined
     - k8s_role == 'master'
 
-- import_tasks: worker.yml
+- name: Worker tasks
+  ansible.builtin.import_tasks: worker.yml
   when:
     - k8s_role is defined
     - k8s_role == 'worker'
 
-- block:
-    - include_tasks: dashboard.yml
+- name: Specific components tasks
+  block:
+    - name: Dashboard
+      ansible.builtin.include_tasks: dashboard.yml
       when:
         - k8s_dashboard_enable|bool
 
-    - include_tasks: users.yml
+    - name: Users
+      ansible.builtin.include_tasks: users.yml
       when:
         - k8s_users is defined
 
-    - include_tasks: ceph-csi.yml
+    - name: Ceph CSI
+      ansible.builtin.include_tasks: ceph-csi.yml
       when:
         - k8s_ceph_csi_enable|bool
 
-    - include_tasks: metallb.yml
+    - name: MetalLB
+      ansible.builtin.include_tasks: metallb.yml
       when:
         - k8s_metallb_enable|bool
 
-    - include_tasks: ingress-nginx.yml
+    - name: Ingress NGINX
+      ansible.builtin.include_tasks: ingress-nginx.yml
       when:
         - k8s_ingress_nginx_enable|bool
 
-    - include_tasks: cert-manager.yml
+    - name: Cert Manager
+      ansible.builtin.include_tasks: cert-manager.yml
       when:
         - k8s_cert_manager_enable|bool
   when:

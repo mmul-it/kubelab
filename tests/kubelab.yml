@@ -1,6 +1,6 @@
 ---
 
-- hosts: k8s_nodes
-  tasks:
-    - import_role:
-        name: 'kubelab'
+- name: Create a Kubernetes cluster using kubelab Ansible role
+  hosts: k8s_nodes
+  roles:
+    - role: ../..
