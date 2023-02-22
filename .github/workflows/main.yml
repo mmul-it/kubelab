@@ -1,0 +1,20 @@
+name: Linter the project
+
+on: [push]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/mmul/kpa
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Check with yamllint
+        run: yamllint collections/ defaults/ handlers/ meta/ tasks/ tests/
+      - name: Check with ansible-lint
+        run: ansible-lint tests/kubelab.yml
+      - name: Install role dependencies
+        run: ansible-galaxy install -r collections/requirements.yml
+      - name: Check with ansible-playbook --syntax-check
+        run: ansible-playbook --syntax-check tests/kubelab.yml
