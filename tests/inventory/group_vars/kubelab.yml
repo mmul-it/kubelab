@@ -1,0 +1,92 @@
+k8s_cluster_name: kubelab
+
+k8s_master_node: kubernetes-1
+k8s_master_port: 6443
+k8s_master_cert_key: "91bded725a628a081d74888df8745172ed842fe30c7a3898b3c63ca98c7226fd"
+
+k8s_multi_master: true
+k8s_balancer_VIP: 192.168.122.199
+k8s_balancer_interface: eth0
+k8s_balancer_port: 8443
+k8s_balancer_password: "d6e284576158b1"
+
+k8s_wait_timeout: 1200
+
+k8s_master_ports:
+  - 2379-2380/tcp
+  - 6443/tcp
+  - 8443/tcp
+  - 10250/tcp
+  - 10257/tcp
+  - 10259/tcp
+
+# Flannel addon
+k8s_network_addon: flannel
+k8s_network_addon_ports:
+  - 8285/udp
+  - 8472/udp
+
+# Enable dashboard
+k8s_dashboard_enable: true
+
+# Users can be created by enabling k8s_users variable
+k8s_users:
+  - name: pod-viewer
+    namespace: default
+    role_name: pod-viewer-role
+    role_rules_apigroups: '""'
+    role_rules_resources: '"pods","pods/exec","pods/log"'
+    role_rules_verbs: '"*"'
+    rolebinding_name: pod-viewer-rolebinding
+    cert_expire_days: 3650
+    update_kube_config: true
+
+# The Ceph CSI can be activated by enabling this section
+k8s_ceph_csi_enable: true
+k8s_ceph_csi_id: lab-ceph
+k8s_ceph_csi_secret_userid: kubernetes
+k8s_ceph_csi_secret_userkey: AQAWvU5jjBHSGhAAuAXtHFt0h05B5J/VHERGOA==
+k8s_ceph_csi_clusterid: d046bbb0-4ee4-11ed-8f6f-525400f292ff
+k8s_ceph_csi_pool: kubepool
+k8s_ceph_csi_monitors:
+  - 192.168.122.11:6789
+  - 192.168.122.12:6789
+  - 192.168.122.13:6789
+
+k8s_metallb_enable: true
+k8s_metallb_pools:
+  - name: 'first-pool'
+    addresses: '192.168.122.100-192.168.122.130'
+
+k8s_ingress_nginx_enable: true
+k8s_ingress_nginx_services:
+  - name: ingress-nginx-lb
+    spec:
+      type: LoadBalancer
+      loadBalancerIP: 192.168.122.100
+      ports:
+      - name: port-1
+        port: 80
+        protocol: TCP
+      - name: port-2
+        port: 443
+        protocol: TCP
+      selector:
+        app.kubernetes.io/component: controller
+        app.kubernetes.io/instance: ingress-nginx
+        app.kubernetes.io/name: ingress-nginx
+
+
+k8s_cert_manager_enable: true
+k8s_cert_manager_issuers:
+  - name: letsencrypt
+    cluster: true
+    acme:
+      server: https://acme-v02.api.letsencrypt.org/directory
+      email: rasca@mmul.it
+      privateKeySecretRef:
+        name: letsencrypt
+      solvers:
+      - http01:
+          ingress:
+            class: nginx
