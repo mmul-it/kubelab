@@ -31,22 +31,17 @@ This role can be configured to enable all of these features:
 
 Check out the main [README](https://github.com/mmul-it/ansible/blob/master/README.md)
 for details on how to install the requirements, you'll typically use the role by
-launching the `kubernetes.yml` playbook, like this:
+launching the `tests/kubelab.yml` playbook, like this:
 
 ```
-user@lab ~ # ansible-playbook \
--i $HOME/Work/Git/github.com/mmul-it/ansible/inventory/lab \
-$HOME/Work/Git/github.com/mmul-it/ansible/kubernetes.yml
+user@lab ~ # ansible-playbook -i tests/inventory/kubelab tests/kubelab.yml
 ```
 
 Note that you can chose anytime to reset everything by passing `k8s_reset` as
 `true`:
 
 ```
-user@lab ~ # ansible-playbook \
--i $HOME/Work/Git/github.com/mmul-it/ansible/inventory/lab \
-$HOME/Work/Git/github.com/mmul-it/ansible/kubernetes.yml \
--e k8s_reset=true
+user@lab ~ # ansible-playbook -i tests/inventory/kubelab tests/kubelab.yml -e k8s_reset=true
 ```
 
 <u><strong>NOTE</strong></u>: this will reset your entire cluster, so use it
@@ -99,12 +94,12 @@ It is also possible to use different users to log into the cluster, check the
 ### Inventory
 
 A typical inventory depends on what you want to deploy, looking at the example
-`lab`  you can declare inside the hosts file (see [inventory/lab/hosts](https://github.com/mmul-it/ansible/blob/master/inventory/lab/hosts))
+`kubelab`  you can declare inside the hosts file (see [tests/inventory/kubelab/hosts](https://github.com/mmul-it/ansible/blob/master/tests/inventory/kubelab/hosts))
 all the nodes:
 
 ```ini
 # Kubernetes hosts
-[k8s_nodes]
+[kubelab]
 kubernetes-1 k8s_role=master run_non_infra_pods=true
 kubernetes-2 k8s_role=master run_non_infra_pods=true
 kubernetes-3 k8s_role=master run_non_infra_pods=true
@@ -114,9 +109,12 @@ kubernetes-4 k8s_role=worker
 You'll set which nodes will act as master and also whether or not those will run
 non infrastructure pods (so to make the master also a worker).
 
-Then you can define, inside group file (see
-[inventory/lab/group_vars/k8s_nodes.yml](https://github.com/mmul-it/ansible/blob/master/inventory/lab/group_vars/k8s_nodes.yml)),
+Then you can define, inside group file (i.e.
+[inventory/kubelab/group_vars/kubelab.yml](https://github.com/mmul-it/kubelab/blob/master/inventory/kubelab/group_vars/kubelab.yml)),
 all the additional configurations, depending on what do you want to implement.
+
+The name of the host group for the Kubernetes host is by default `kubelab` but
+can be overridden by declaring the `k8s_host_group` variable.
 
 ### Kubernetes cluster
 

@@ -1,6 +1,6 @@
 ---
 
 - name: Create a Kubernetes cluster using kubelab Ansible role
-  hosts: k8s_nodes
+  hosts: "{{ k8s_host_group }}"
   roles:
     - role: ../..
