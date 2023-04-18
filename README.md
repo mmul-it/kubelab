@@ -1,4 +1,4 @@
-# Kubelab: a Kubernetes role for Ansible
+# Kubelab: Kubernetes cluster management Ansible role
 
 This role can be used to deploy a Kubernetes cluster with a fully automated and
 idempotent implementation of several components.
@@ -33,14 +33,14 @@ Check out the main [README](https://github.com/mmul-it/ansible/blob/master/READM
 for details on how to install the requirements, you'll typically use the role by
 launching the `tests/kubelab.yml` playbook, like this:
 
-```
+```console
 user@lab ~ # ansible-playbook -i tests/inventory/kubelab tests/kubelab.yml
 ```
 
 Note that you can chose anytime to reset everything by passing `k8s_reset` as
 `true`:
 
-```
+```console
 user@lab ~ # ansible-playbook -i tests/inventory/kubelab tests/kubelab.yml -e k8s_reset=true
 ```
 
@@ -52,7 +52,7 @@ with caution.
 Once the playbook completes its execution the best way to interact with the
 cluster is by using the `kubectl` command that can be installed as follows:
 
-```
+```console
 user@lab ~ # curl -s -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
 
 user@lab ~ # chmod +x kubectl
@@ -64,14 +64,14 @@ The Kubernetes role produces a local directory which contains the main
 kubeconfig file, named admin.conf. The easiest way to use it is by exporting the
 KUBECONFIG variable, like this:
 
-```
-user@lab ~ # export KUBECONFIG=~/kubernetes/admin.conf 
+```console
+user@lab ~ # export KUBECONFIG=~/kubernetes/admin.conf
 ```
 
 From now until the end of the session, every time you'll `kubectl` it will rely
 on the credentials contained in that file:
 
-```
+```console
 user@lab ~ # kubectl cluster-info
 Kubernetes control plane is running at https://192.168.122.199:8443
 CoreDNS is running at https://192.168.122.199:8443/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy
@@ -190,7 +190,7 @@ override it).
 
 To retrieve the token you'll need use `kubectl`, like this:
 
-```
+```console
 user@lab ~ # kubectl -n kubernetes-dashboard create token dashboard-user
 <YOUR TOKEN>
 ```
@@ -217,7 +217,7 @@ k8s_users:
 
 This will create a local directory containing these files:
 
-```
+```console
 user@lab ~ # ls -1 kubernetes/users/
 pod-viewer.crt
 pod-viewer.csr
@@ -230,20 +230,20 @@ users-roles.yaml
 The `users.conf` file can then be used to access the cluster with this user,
 like this:
 
-```
-user@lab ~ # export KUBECONFIG=~/kubernetes/users/users.conf 
+```console
+user@lab ~ # export KUBECONFIG=~/kubernetes/users/users.conf
 
-rasca@catastrofe [~]> kubectl config get-contexts 
+rasca@catastrofe [~]> kubectl config get-contexts
 CURRENT   NAME                       CLUSTER   AUTHINFO           NAMESPACE
-*         kubernetes-admin@kubelab   kubelab   kubernetes-admin   
+*         kubernetes-admin@kubelab   kubelab   kubernetes-admin
           pod-viewer@kubelab         kubelab   pod-viewer         default
 
-user@lab ~ # kubectl config use-context pod-viewer@kubelab 
+user@lab ~ # kubectl config use-context pod-viewer@kubelab
 Switched to context "pod-viewer@kubelab".
 
-user@lab ~ # kubectl config get-contexts 
+user@lab ~ # kubectl config get-contexts
 CURRENT   NAME                       CLUSTER   AUTHINFO           NAMESPACE
-          kubernetes-admin@kubelab   kubelab   kubernetes-admin   
+          kubernetes-admin@kubelab   kubelab   kubernetes-admin
 *         pod-viewer@kubelab         kubelab   pod-viewer         default
 
 user@lab ~ # kubectl get pods
@@ -465,3 +465,11 @@ If you look specifically on the last resource, the `Ingress` named
 
 With this in place, after some time, you'll have your cert served for the
 exposed service.
+
+## License
+
+MIT
+
+## Author Information
+
+Raoul Scarazzini ([rascasoft](https://github.com/rascasoft))
