@@ -95,6 +95,8 @@ k8s_network_addon_ports:
 
 k8s_dashboard_enable: false
 k8s_dashboard_namespace: kubernetes-dashboard
+# Use: kubectl -n kubernetes-dashboard create token dashboard-user
+# to get the token
 k8s_dashboard_user: dashboard-user
 
 k8s_ceph_csi_enable: false
