@@ -137,6 +137,7 @@
 
     - name: Get SHA256 Discovery Token CA Cert Hash from Kubernetes
       ansible.builtin.shell: |
+        set -o pipefail
         openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt | \
         openssl rsa -pubin -outform der 2>/dev/null | \
         openssl dgst -sha256 -hex | \

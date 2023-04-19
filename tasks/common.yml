@@ -184,7 +184,6 @@
     name: "{{ item }}"
     state: started
     enabled: true
-    masked: false
   with_items:
     - "{{ k8s_services }}"
 
@@ -213,7 +212,6 @@
         name: firewalld
         state: started
         enabled: true
-        masked: false
 
     - name: Allow masquerade in Firewalld
       ansible.posix.firewalld:
