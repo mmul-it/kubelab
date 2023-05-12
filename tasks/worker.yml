@@ -28,5 +28,5 @@
       changed_when: true
       when: k8s_multi_master | bool
   when:
-    - k8s_node_status != 'Ready'
+    - k8s_node_status == "NotAvailable"
   become: true

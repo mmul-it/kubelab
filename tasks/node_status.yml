@@ -12,16 +12,32 @@
   failed_when: false
   delegate_to: localhost
 
-- name: Set status of the node to NotReady
+- name: Set node status to NotAvailable
   ansible.builtin.set_fact:
-    k8s_node_status: 'NotReady'
+    k8s_node_status: 'NotAvailable'
 
-- name: Reset status of the node only if k8s_info is successful
-  ansible.builtin.set_fact:
-    k8s_node_status: "{{ lookup('vars', 'k8s_info') | community.general.json_query(jmespath_node_ready) | first }}"
-  vars:
-    jmespath_node_ready: "resources[0].status.conditions[?reason == 'KubeletReady'].type"
+- name: Query k8s_info results to get node status
+  block:
+    - name: Check if node status is KubeletNotReady
+      ansible.builtin.set_fact:
+        k8s_node_status: "{{ lookup('vars', 'k8s_info') | community.general.json_query(jmespath_node_ready) }}"
+      vars:
+        jmespath_node_ready: "resources[0].status.conditions[?reason == 'KubeletNotReady'].reason"
+      failed_when: false
+
+    - name: Check if node status is KubeletReady
+      ansible.builtin.set_fact:
+        k8s_node_status: "{{ lookup('vars', 'k8s_info') | community.general.json_query(jmespath_node_ready) }}"
+      vars:
+        jmespath_node_ready: "resources[0].status.conditions[?reason == 'KubeletReady'].reason"
+      when:
+        - k8s_node_status != 'KubeletNotReady'
+      failed_when: false
   when:
     - k8s_info.resources is defined
     - k8s_info.resources|length > 0
     - k8s_info.exception is undefined
+
+- name: Display node status
+  ansible.builtin.debug:
+    msg: "Node status is {{ k8s_node_status }}"
