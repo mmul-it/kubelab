@@ -29,23 +29,60 @@ This role can be configured to enable all of these features:
 
 ## Install the cluster with the Ansible Playbook
 
-Check out the main [README](https://github.com/mmul-it/ansible/blob/master/README.md)
-for details on how to install the requirements, you'll typically use the role by
-launching the `tests/kubelab.yml` playbook, like this:
+The best way to prepare the environment is to use a Python VirtualEnv,
+installing ansible using `pip3`:
 
 ```console
-user@lab ~ # ansible-playbook -i tests/inventory/kubelab tests/kubelab.yml
+user@lab ~ # python3 -m venv ansible
+user@lab ~ # source ansible/bin/activate
+(ansible) user@lab ~ # pip3 install ansible
+Collecting ansible
+  Using cached ansible-7.5.0-py3-none-any.whl (43.6 MB)
+...
+...
+Installing collected packages: resolvelib, PyYAML, pycparser, packaging, MarkupSafe, jinja2, cffi, cryptography, ansible-core, ansible
+Successfully installed MarkupSafe-2.1.2 PyYAML-6.0 ansible-7.5.0 ansible-core-2.14.5 cffi-1.15.1 cryptography-40.0.2 jinja2-3.1.2 packaging-23.1 pycparser-2.21 resolvelib-0.8.1
 ```
 
-Note that you can chose anytime to reset everything by passing `k8s_reset` as
-`true`:
+Then you will need this role, and in this case using `ansible-galaxy` is a good
+choice to make it all automatic:
 
 ```console
-user@lab ~ # ansible-playbook -i tests/inventory/kubelab tests/kubelab.yml -e k8s_reset=true
+(ansible) user@lab ~ # ansible-galaxy install mmul.kubelab -p ansible/roles/
+Starting galaxy role install process
+- downloading role 'kubelab', owned by mmul
+- downloading role from https://github.com/mmul-it/kubelab/archive/main.tar.gz
+- extracting mmul.kubelab to /home/rasca/ansible/roles/mmul.kubelab
+- mmul.kubelab (main) was installed successfully
 ```
 
-<u><strong>NOTE</strong></u>: this will reset your entire cluster, so use it
-with caution.
+With the role in place you can complete the requirements, again by using `pip3`:
+
+```console
+(ansible) user@lab ~ # pip3 install -r ansible/roles/mmul.kubelab/requirements.txt
+...
+...
+Successfully installed ansible-vault-2.1.0 cachetools-5.3.0 certifi-2023.5.7 charset-normalizer-3.1.0 google-auth-2.18.0 idna-3.4 kubernetes-26.1.0 oauthlib-3.2.2 pyasn1-0.5.0 pyasn1-modules-0.3.0 python-dateutil-2.8.2 requests-2.30.0 requests-oauthlib-1.3.1 rsa-4.9 six-1.16.0 urllib3-1.26.15 websocket-client-1.5.1
+```
+
+Once requirements are available, you'll typically use the role by launching the
+`tests/kubelab.yml` playbook, like this:
+
+```console
+(ansible) user@lab ~ # ansible-playbook -i tests/inventory/kubelab tests/kubelab.yml
+```
+
+<u><strong>NOTE</strong></u>: date & time of the involved systems are important!
+Having a clock skew between the machine you're executing Ansible playbooks and
+the destination machines could cause certificate verification to fail.
+
+<u><strong>NOTE</strong></u>: you can chose anytime to reset everything by
+passing `k8s_reset` as `true`. This will reset your entire cluster, so use it
+with caution:
+
+```console
+(ansible) user@lab ~ # ansible-playbook -i tests/inventory/kubelab tests/kubelab.yml -e k8s_reset=true
+```
 
 ## Interact with the cluster after the installation
 
