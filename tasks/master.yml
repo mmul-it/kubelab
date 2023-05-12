@@ -161,6 +161,7 @@
     --certificate-key {{ k8s_master_cert_key }}
   args:
     creates: /etc/kubernetes/kubelet.conf
+  throttle: 1
   become: true
   when:
     - k8s_node_status != 'Ready'
