@@ -19,3 +19,14 @@ jobs:
         run: ansible-galaxy install -r collections/requirements.yml
       - name: Check with ansible-playbook --syntax-check
         run: ansible-playbook --syntax-check tests/kubelab.yml
+
+  trigger_galaxy_import:
+    runs-on: ubuntu-latest
+    needs: lint
+    container:
+      image: ghcr.io/mmul-it/kpa
+      options: --user root
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Trigger Ansible Galaxy to import the role
+        run: ansible-galaxy role import --token ${{ secrets.GALAXY_API_KEY }} ${{ github.repository_owner }} ${{ github.event.repository.name }}
