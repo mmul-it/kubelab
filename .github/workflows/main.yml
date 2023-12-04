@@ -23,10 +23,11 @@ jobs:
   trigger_galaxy_import:
     runs-on: ubuntu-latest
     needs: lint
-    container:
-      image: ghcr.io/mmul-it/kpa
-      options: --user root
     if: github.ref == 'refs/heads/main'
     steps:
-      - name: Trigger Ansible Galaxy to import the role
-        run: ansible-galaxy role import --token ${{ secrets.GALAXY_API_KEY }} ${{ github.repository_owner }} ${{ github.event.repository.name }}
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Release Ansible Role to Galaxy
+        uses: hspaans/ansible-galaxy-action@v1
+        with:
+          api_key: ${{ secrets.GALAXY_API_KEY }}
