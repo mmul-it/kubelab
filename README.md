@@ -1,4 +1,4 @@
-# Kubelab: Kubernetes cluster management Ansible role
+# ![Kubelab Ansible Role](./images/kubelab-github-header.png)
 
 This role can be used to deploy a Kubernetes cluster with a fully automated and
 idempotent implementation of several components.
