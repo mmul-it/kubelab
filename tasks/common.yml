@@ -93,21 +93,19 @@
       ansible.builtin.yum_repository:
         name: kubernetes
         description: Kubernetes
-        baseurl: 'https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64'
+        baseurl: "https://pkgs.k8s.io/core:/stable:/{{ k8s_release }}/rpm/"
         enabled: true
         gpgcheck: true
         repo_gpgcheck: true
         gpgkey:
-          - 'https://packages.cloud.google.com/yum/doc/yum-key.gpg'
-          - 'https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg'
+          - "https://pkgs.k8s.io/core:/stable:/{{ k8s_release }}/rpm/repodata/repomd.xml.key"
 
     - name: Adding Kubernetes repo keys
       ansible.builtin.rpm_key:
         state: present
         key: "{{ item }}"
       with_items:
-        - 'https://packages.cloud.google.com/yum/doc/yum-key.gpg'
-        - 'https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg'
+        - "https://pkgs.k8s.io/core:/stable:/{{ k8s_release }}/rpm/repodata/repomd.xml.key"
       retries: 5
       delay: 5
   when:
@@ -129,18 +127,14 @@
 
     - name: Add Kubernetes GPG key
       ansible.builtin.apt_key:
-        url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
-        keyring: /etc/apt/keyrings/kubernetes-archive-keyring.gpg
+        url: "https://pkgs.k8s.io/core:/stable:/{{ k8s_release }}/deb/Release.key"
+        keyring: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
 
     - name: Add Kubernetes APT repository
       ansible.builtin.apt_repository:
-        # FIXME: until there will be a jammy repository we will fix the release
-        #        to xenial
-        # repo: deb [arch=amd64 signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg]
-        #        https://apt.kubernetes.io/ kubernetes-{{ ansible_distribution_release }} main
-        repo: deb [arch=amd64 signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg]
-               https://apt.kubernetes.io/ kubernetes-xenial main
-        filename: kubernetes
+        repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg]
+               https://pkgs.k8s.io/core:/stable:/{{ k8s_release }}/deb/ /"
+        filename: kubernetes.list
   when:
     - ansible_os_family == 'Debian'
 
