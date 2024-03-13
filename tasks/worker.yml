@@ -3,30 +3,30 @@
 - name: Reset Kubernetes worker node
   ansible.builtin.command: kubeadm reset -f
   args:
-    removes: '/etc/kubernetes/manifests/*'
+    removes: '/etc/kubernetes'
   when:
     - k8s_reset|bool
   become: true
 
-- name: Check ndoe status
+- name: Check node status
   ansible.builtin.import_tasks: node_status.yml
 
 - name: Join worker nodes
   block:
-    - name: Joining worker kubernetes single master
-      ansible.builtin.command: kubeadm join --token {{ hostvars[k8s_master_node]['k8s_token'] }} \
-        --discovery-token-ca-cert-hash sha256:{{ hostvars[k8s_master_node]['k8s_discovery_token_ca_cert_hash'] }} \
-        {{ k8s_master_node }}:{{ k8s_master_port }}
+    - name: Joining worker kubernetes single control plane
+      ansible.builtin.command: kubeadm join --token {{ hostvars[k8s_control_plane_node]['k8s_token'] }} \
+        --discovery-token-ca-cert-hash sha256:{{ hostvars[k8s_control_plane_node]['k8s_discovery_token_ca_cert_hash'] }} \
+        {{ k8s_control_plane_node }}:{{ k8s_control_plane_port }}
       changed_when: true
-      when: not k8s_multi_master | bool
+      when: not k8s_multi_control_plane | bool
 
-    - name: Join worker kubernetes multi master
+    - name: Join worker kubernetes multi control plane
       ansible.builtin.command: |
         kubeadm join {{ k8s_balancer_VIP }}:{{ k8s_balancer_port }} \
-        --token {{ hostvars[k8s_master_node]['k8s_token'] }} \
-        --discovery-token-ca-cert-hash sha256:{{ hostvars[k8s_master_node]['k8s_discovery_token_ca_cert_hash'] }}
+        --token {{ hostvars[k8s_control_plane_node]['k8s_token'] }} \
+        --discovery-token-ca-cert-hash sha256:{{ hostvars[k8s_control_plane_node]['k8s_discovery_token_ca_cert_hash'] }}
       changed_when: true
-      when: k8s_multi_master | bool
+      when: k8s_multi_control_plane | bool
   when:
     - k8s_node_status == "NotAvailable"
   become: true

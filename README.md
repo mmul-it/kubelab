@@ -10,7 +10,7 @@ idempotent implementation of several components.
 
 This role can be configured to enable all of these features:
 
-- **Single or multi master cluster implementation** with HAProxy and Keepalived
+- **Single or multi control plane cluster implementation** with HAProxy and Keepalived
   for High Availability.
 
 - **Multi network add-ons** Flannel and Calico.
@@ -137,14 +137,14 @@ all the nodes:
 ```ini
 # Kubernetes hosts
 [kubelab]
-kubernetes-1 k8s_role=master run_non_infra_pods=true
-kubernetes-2 k8s_role=master run_non_infra_pods=true
-kubernetes-3 k8s_role=master run_non_infra_pods=true
+kubernetes-1 k8s_role=control-plane run_non_infra_pods=true
+kubernetes-2 k8s_role=control-plane run_non_infra_pods=true
+kubernetes-3 k8s_role=control-plane run_non_infra_pods=true
 kubernetes-4 k8s_role=worker
 ```
 
-You'll set which nodes will act as master and also whether or not those will run
-non infrastructure pods (so to make the master also a worker).
+You'll set which nodes will act as control plane and also whether or not those
+will run non infrastructure pods (so to make the control plane also a worker).
 
 Then you can define, inside group file (i.e.
 [inventory/kubelab/group_vars/kubelab.yml](https://github.com/mmul-it/kubelab/blob/master/inventory/kubelab/group_vars/kubelab.yml)),
@@ -155,17 +155,17 @@ can be overridden by declaring the `k8s_host_group` variable.
 
 ### Kubernetes cluster
 
-If you want to implement a multi-master, high availability cluster you'll need
-to specify these variables:
+If you want to implement a multi-control-plane, high availability cluster
+you'll need to specify these variables:
 
 ```yaml
 k8s_cluster_name: kubelab
 
-k8s_master_node: kubernetes-1
-k8s_master_port: 6443
-k8s_master_cert_key: "91bded725a628a081d74888df8745172ed842fe30c7a3898b3c63ca98c7226fd"
+k8s_control_plane_node: kubernetes-1
+k8s_control_plane_port: 6443
+k8s_control_plane_cert_key: "91bded725a628a081d74888df8745172ed842fe30c7a3898b3c63ca98c7226fd"
 
-k8s_multi_master: true
+k8s_multi_control_plane: true
 k8s_balancer_VIP: 192.168.122.199
 k8s_balancer_interface: eth0
 k8s_balancer_port: 8443
@@ -173,7 +173,7 @@ k8s_balancer_password: "d6e284576158b1"
 
 k8s_wait_timeout: 1200
 
-k8s_master_ports:
+k8s_control_plane_ports:
   - 2379-2380/tcp
   - 6443/tcp
   - 8443/tcp
@@ -183,9 +183,10 @@ k8s_master_ports:
 ```
 
 This will bring up a cluster starting from node `kubernetes-1` enabling multi
-master via `k8s_multi_master` and setting the VIP address and the interface.
+control plane via `k8s_multi_control_plane` and setting the VIP address and the
+interface.
 
-**<u>Note</u>**: you'll want to change both `k8s_master_cert_key` and
+**<u>Note</u>**: you'll want to change both `k8s_control_plane_cert_key` and
 `k8s_balancer_password` for better security.
 
 **<u>Note</u>**: it is possible to have a more atomic way to configure pods

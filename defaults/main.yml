@@ -36,39 +36,39 @@ k8s_services:
   - kubelet
   - "{{ k8s_container_service }}"
 
-# The main master node from which all will be driven
-k8s_master_node: kubernetes-1
+# The main control plane node from which all will be driven
+k8s_control_plane_node: kubernetes-1
 
-# The master port on which Kubernetes will serve
-k8s_master_port: 6443
+# The control plane port on which Kubernetes will serve
+k8s_control_plane_port: 6443
 
 # Define the certificate key for k8s encryption
 # If you need to generate random key for k8s certificate encryption use:
 # openssl rand -hex 32
-k8s_master_cert_key: "91bded725a628a081d74888df8745172ed842fe30c7a3898b3c63ca98c7226fd"
+k8s_control_plane_cert_key: "91bded725a628a081d74888df8745172ed842fe30c7a3898b3c63ca98c7226fd"
 
-# Multi master
-# Set to true if you want a multi master setup:
-k8s_multi_master: false
+# Multi control plane
+# Set to true if you want a multi control plane setup:
+k8s_multi_control_plane: false
 
-# Multi master - Define balancer VIP:
+# Multi control plane - Define balancer VIP:
 # k8s_balancer_VIP: 192.168.122.199
 #
-# Multi master - Define balancer port
+# Multi control plane - Define balancer port
 # k8s_balancer_port: 8443
 #
-# Multi master - Define balancer password
+# Multi control plane - Define balancer password
 # If you need to generate password just use:
 # openssl rand -hex 7
 # k8s_balancer_password: "d6e284576158b1"
 
-k8s_master_ports:
+k8s_control_plane_ports:
   - 2379-2380/tcp
   - 6443/tcp
   - 10250/tcp
   - 10257/tcp
   - 10259/tcp
-  # Multi master - Remember to enable the load balancer port
+  # Multi control plane - Remember to enable the load balancer port
   # - 8443/tcp
 
 k8s_worker_ports:

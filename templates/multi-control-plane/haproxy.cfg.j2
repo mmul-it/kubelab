@@ -38,7 +38,7 @@ frontend apiserver
     default_backend apiserver
 
 #---------------------------------------------------------------------
-# round robin balancing between the various k8s masters
+# round robin balancing between the various k8s control planes
 #---------------------------------------------------------------------
 backend apiserver
     option  httpchk GET /readyz HTTP/1.0
@@ -48,7 +48,7 @@ backend apiserver
     balance     roundrobin
     default-server verify none check-ssl inter 10s downinter 5s rise 2 fall 2 slowstart 60s maxconn 5000 maxqueue 5000 weight 100
 {% for host in ansible_play_batch %}
-{% if hostvars[host].k8s_role == 'master' %}
-    server master-{{ loop.index }} {{ host }}:{{ k8s_master_port }} check
+{% if hostvars[host].k8s_role == 'control-plane' %}
+    server control-plane-{{ loop.index }} {{ host }}:{{ k8s_control_plane_port }} check
 {% endif %}
 {% endfor %}

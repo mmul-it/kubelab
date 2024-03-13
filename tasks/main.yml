@@ -28,10 +28,10 @@
   run_once: true
 
 - name: Master tasks
-  ansible.builtin.import_tasks: master.yml
+  ansible.builtin.import_tasks: control-plane.yml
   when:
     - k8s_role is defined
-    - k8s_role == 'master'
+    - k8s_role == 'control-plane'
 
 - name: Worker tasks
   ansible.builtin.import_tasks: worker.yml
@@ -72,5 +72,5 @@
         - k8s_cert_manager_enable|bool
   when:
     - k8s_role is defined
-    - k8s_role == 'master'
-    - inventory_hostname == k8s_master_node
+    - k8s_role == 'control-plane'
+    - inventory_hostname == k8s_control_plane_node

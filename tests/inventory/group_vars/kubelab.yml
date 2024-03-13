@@ -1,10 +1,10 @@
 k8s_cluster_name: kubelab
 
-k8s_master_node: kubernetes-1
-k8s_master_port: 6443
-k8s_master_cert_key: "91bded725a628a081d74888df8745172ed842fe30c7a3898b3c63ca98c7226fd"
+k8s_control_plane_node: kubernetes-1
+k8s_control_plane_port: 6443
+k8s_control_plane_cert_key: "91bded725a628a081d74888df8745172ed842fe30c7a3898b3c63ca98c7226fd"
 
-k8s_multi_master: true
+k8s_multi_control_plane: true
 k8s_balancer_VIP: 192.168.122.199
 k8s_balancer_interface: eth0
 k8s_balancer_port: 8443
@@ -12,7 +12,7 @@ k8s_balancer_password: "d6e284576158b1"
 
 k8s_wait_timeout: 1200
 
-k8s_master_ports:
+k8s_control_plane_ports:
   - 2379-2380/tcp
   - 6443/tcp
   - 8443/tcp

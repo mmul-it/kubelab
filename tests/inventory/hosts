@@ -1,6 +1,6 @@
 # Kubernetes hosts
 [kubelab]
-kubernetes-1 k8s_role=master run_non_infra_pods=true
-kubernetes-2 k8s_role=master run_non_infra_pods=true
-kubernetes-3 k8s_role=master run_non_infra_pods=true
+kubernetes-1 k8s_role=control-plane run_non_infra_pods=true
+kubernetes-2 k8s_role=control-plane run_non_infra_pods=true
+kubernetes-3 k8s_role=control-plane run_non_infra_pods=true
 kubernetes-4 k8s_role=worker

@@ -12,7 +12,7 @@ vrrp_script check_apiserver {
 }
 
 vrrp_instance VI_1 {
-{% if inventory_hostname == k8s_master_node %}
+{% if inventory_hostname == k8s_control_plane_node %}
     state MASTER
     priority 101
 {% else %}

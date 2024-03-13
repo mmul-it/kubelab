@@ -1,6 +1,6 @@
 ---
 
-- name: Reset Kubernetes master node
+- name: Reset Kubernetes control plane node
   ansible.builtin.command: kubeadm reset -f
   args:
     removes: '/etc/kubernetes/manifests/*'
@@ -13,15 +13,15 @@
 
 - name: Set control plane endpoint for single node
   ansible.builtin.set_fact:
-    k8s_control_plane_endpoint: "{{ hostvars[k8s_master_node]['ansible_default_ipv4']['address'] }}"
-  when: not k8s_multi_master | bool
+    k8s_control_plane_endpoint: "{{ hostvars[k8s_control_plane_node]['ansible_default_ipv4']['address'] }}"
+  when: not k8s_multi_control_plane | bool
 
-- name: Set control plane endpoint for multi master
+- name: Set control plane endpoint for multi control plane
   ansible.builtin.set_fact:
     k8s_control_plane_endpoint: "{{ k8s_balancer_VIP }}:{{ k8s_balancer_port }}"
-  when: k8s_multi_master | bool
+  when: k8s_multi_control_plane | bool
 
-- name: Multi master directories and files
+- name: Multi control plane directories and files
   block:
     - name: Directories
       ansible.builtin.file:
@@ -34,7 +34,7 @@
 
     - name: Create haproxy.cfg file
       ansible.builtin.template:
-        src: multi-master/haproxy.cfg.j2
+        src: multi-control-plane/haproxy.cfg.j2
         dest: /usr/local/etc/haproxy/haproxy.cfg
         owner: root
         group: root
@@ -42,7 +42,7 @@
 
     - name: Create keepalived.conf file
       ansible.builtin.template:
-        src: multi-master/keepalived.conf.j2
+        src: multi-control-plane/keepalived.conf.j2
         dest: /usr/local/etc/keepalived/keepalived.conf
         owner: root
         group: root
@@ -50,7 +50,7 @@
 
     - name: Create pod configurations"
       ansible.builtin.template:
-        src: "templates/multi-master/{{ item }}_pod.yaml.j2"
+        src: "templates/multi-control-plane/{{ item }}_pod.yaml.j2"
         dest: "/etc/kubernetes/manifests/{{ item }}.yaml"
         owner: root
         group: root
@@ -61,16 +61,16 @@
 
     - name: Create keepalived check script
       ansible.builtin.template:
-        src: multi-master/check_apiserver.sh.j2
+        src: multi-control-plane/check_apiserver.sh.j2
         dest: /usr/local/etc/keepalived/check_apiserver.sh
         owner: root
         group: root
         mode: '0755'
   become: true
   when:
-    - k8s_multi_master | bool
+    - k8s_multi_control_plane | bool
 
-- name: Set up the master node
+- name: Set up the control plane node
   block:
     - name: Pulling images required for setting up a Kubernetes cluster
       ansible.builtin.command: kubeadm config images pull
@@ -91,7 +91,7 @@
   become: true
   when:
     - k8s_node_status == "NotAvailable"
-    - inventory_hostname == k8s_master_node
+    - inventory_hostname == k8s_control_plane_node
 
 - name: Copy remote /etc/kubernetes/admin.conf on local directory
   ansible.builtin.fetch:
@@ -101,7 +101,7 @@
     mode: '0640'
   become: true
   when:
-    - inventory_hostname == k8s_master_node
+    - inventory_hostname == k8s_control_plane_node
 
 - name: Create Network Add-on local folder
   ansible.builtin.file:
@@ -118,7 +118,7 @@
     - name: "network-addons/{{ k8s_network_addon }}"
   run_once: true
 
-- name: Set kubeadm join credentials from master node
+- name: Set kubeadm join credentials from control plane node
   block:
     - name: Get Token from Kubernetes
       ansible.builtin.shell: |
@@ -152,24 +152,24 @@
       ansible.builtin.set_fact:
         k8s_discovery_token_ca_cert_hash: "{{ k8s_discovery_token_ca_cert_hash_output.stdout }}"
   when:
-    - inventory_hostname == k8s_master_node
+    - inventory_hostname == k8s_control_plane_node
 
-- name: Join control-plane nodes with kubernetes master
+- name: Join control-plane nodes with kubernetes control plane
   ansible.builtin.command: |
     kubeadm join {{ k8s_control_plane_endpoint }} \
-    --token {{ hostvars[k8s_master_node]['k8s_token'] }} \
-    --discovery-token-ca-cert-hash sha256:{{ hostvars[k8s_master_node]['k8s_discovery_token_ca_cert_hash'] }} \
+    --token {{ hostvars[k8s_control_plane_node]['k8s_token'] }} \
+    --discovery-token-ca-cert-hash sha256:{{ hostvars[k8s_control_plane_node]['k8s_discovery_token_ca_cert_hash'] }} \
     --control-plane \
-    --certificate-key {{ k8s_master_cert_key }}
+    --certificate-key {{ k8s_control_plane_cert_key }}
   args:
     creates: /etc/kubernetes/kubelet.conf
   throttle: 1
   become: true
   when:
     - k8s_node_status != 'Ready'
-    - inventory_hostname != k8s_master_node
+    - inventory_hostname != k8s_control_plane_node
 
-- name: Enable master to run non infrastructure pods
+- name: Enable control plane to run non infrastructure pods
   kubernetes.core.k8s_taint:
     kubeconfig: "{{ k8s_kubeconfig }}"
     name: "{{ inventory_hostname }}"

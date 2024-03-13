@@ -216,7 +216,7 @@
       notify:
         - Restart firewalld
 
-    - name: Enable VRRP protocol for multi master setup
+    - name: Enable VRRP protocol for multi control plane setup
       ansible.posix.firewalld:
         rich_rule: rule protocol value="vrrp" accept
         state: enabled
@@ -224,22 +224,22 @@
         immediate: true
       when:
         - k8s_role is defined
-        - k8s_role == 'master'
-        - k8s_multi_master | bool
+        - k8s_role == 'control-plane'
+        - k8s_multi_control_plane | bool
       notify:
         - Restart firewalld
 
-    - name: Allow master node network ports in Firewalld
+    - name: Allow control plane node network ports in Firewalld
       ansible.posix.firewalld:
         port: "{{ item }}"
         state: enabled
         permanent: true
         immediate: true
       with_items:
-        - "{{ k8s_master_ports }}"
+        - "{{ k8s_control_plane_ports }}"
       when:
         - k8s_role is defined
-        - k8s_role == 'master'
+        - k8s_role == 'control-plane'
       notify:
         - Restart firewalld
 

@@ -1,6 +1,6 @@
 apiVersion: kubeadm.k8s.io/v1beta3
 kind: InitConfiguration
-certificateKey: "{{ k8s_master_cert_key }}"
+certificateKey: "{{ k8s_control_plane_cert_key }}"
 ---
 apiVersion: kubeadm.k8s.io/v1beta3
 kind: ClusterConfiguration
