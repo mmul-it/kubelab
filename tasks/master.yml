@@ -142,6 +142,8 @@
         openssl rsa -pubin -outform der 2>/dev/null | \
         openssl dgst -sha256 -hex | \
         sed 's/^.* //'
+      args:
+        executable: /bin/bash
       register: k8s_discovery_token_ca_cert_hash_output
       changed_when: false
       become: true
