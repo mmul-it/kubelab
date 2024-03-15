@@ -112,6 +112,7 @@ k8s_metallb_ports:
 k8s_metallb_pools: {}
 
 k8s_ingress_nginx_enable: false
+k8s_ingress_nginx_haproxy_conf: false
 k8s_ingress_nginx_namespace: ingress-nginx
 k8s_ingress_nginx_services: {}
 

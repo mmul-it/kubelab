@@ -52,3 +52,51 @@ backend apiserver
     server control-plane-{{ loop.index }} {{ host }}:{{ k8s_control_plane_port }} check
 {% endif %}
 {% endfor %}
+
+{% if k8s_ingress_nginx_haproxy_conf | bool %}
+#---------------------------------------------------------------------
+# http and https frontends which proxys to the ingress backends
+#---------------------------------------------------------------------
+frontend ingresshttp
+    bind *:80
+    mode tcp
+    option tcplog
+    default_backend ingresshttp
+
+frontend ingresshttps
+    bind *:443
+    mode tcp
+    tcp-request inspect-delay 5s
+    tcp-request content accept if { req_ssl_hello_type 1 }
+    default_backend ingresshttps
+
+#---------------------------------------------------------------------
+# round robin balancing between the various k8s control planes
+#---------------------------------------------------------------------
+backend ingresshttp
+    option  httpchk GET /readyz HTTP/1.0
+    option  log-health-checks
+    http-check expect status 200
+    mode tcp
+    balance     roundrobin
+    default-server verify none check-ssl inter 10s downinter 5s rise 2 fall 2 slowstart 60s maxconn 5000 maxqueue 5000 weight 100
+{% for host in ansible_play_batch %}
+{% if hostvars[host].k8s_role == 'control-plane' %}
+    server control-plane-{{ loop.index }} {{ host }}:80 check
+{% endif %}
+{% endfor %}
+
+backend ingresshttps
+    option  httpchk GET /readyz HTTP/1.0
+    option  log-health-checks
+    http-check expect status 200
+    mode tcp
+    balance     roundrobin
+    default-server verify none check-ssl inter 10s downinter 5s rise 2 fall 2 slowstart 60s maxconn 5000 maxqueue 5000 weight 100
+{% for host in ansible_play_batch %}
+{% if hostvars[host].k8s_role == 'control-plane' %}
+    server control-plane-{{ loop.index }} {{ host }}:443 check
+{% endif %}
+{% endfor %}
+
+{% endif %}

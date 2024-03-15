@@ -374,6 +374,63 @@ balancer, it is sufficient to declare:
 
 ```yaml
 k8s_ingress_nginx_enable: true
+```
+
+This will install the Ingress NGINX controller that can be used for different
+purposes.
+
+#### Ingress NGINX on control-planes
+
+For example it is possible to use Ingress NGINX by exposing the `80` and `443`
+ports on the balanced IP managed by haproxy, by declaring this:
+
+```yaml
+k8s_ingress_nginx_enable: true
+k8s_ingress_nginx_haproxy_conf: true
+k8s_ingress_nginx_services:
+  - name: ingress-nginx-externalip
+    spec:
+      externalIPs:
+      - 192.168.122.199
+      ports:
+      - name: port-1
+        port: 80
+        protocol: TCP
+      - name: port-2
+        port: 443
+        protocol: TCP
+      selector:
+        app.kubernetes.io/component: controller
+        app.kubernetes.io/instance: ingress-nginx
+        app.kubernetes.io/name: ingress-nginx
+```
+
+This will expose both ports on the balanced IP (in this case `192.168.122.199`
+and will make the service responding there.
+
+To test it just try this:
+
+```console
+$ kubectl create deployment demo --image=httpd --port=80
+deployment.apps/demo created
+
+$ kubectl expose deployment demo
+service/demo exposed
+
+$ kubectl create ingress demo --class=nginx --rule="demo.192.168.122.199.nip.io/*=demo:80"
+ingress.networking.k8s.io/demo created
+
+$ curl http://demo.192.168.122.199.nip.io
+<html><body><h1>It works!</h1></body></html>
+```
+
+#### Ingress NGINX with MetalLB
+
+Another way is to use it in combination with MetalLB, by declaring a
+`LoadBalancer` service, as follows:
+
+```yaml
+k8s_ingress_nginx_enable: true
 k8s_ingress_nginx_services:
   - name: ingress-nginx-lb
     spec:

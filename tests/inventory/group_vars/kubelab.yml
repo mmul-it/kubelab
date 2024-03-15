@@ -59,7 +59,23 @@ k8s_metallb_pools:
     addresses: '192.168.122.100-192.168.122.130'
 
 k8s_ingress_nginx_enable: true
+k8s_ingress_nginx_haproxy_conf: true
 k8s_ingress_nginx_services:
+  - name: ingress-nginx-externalip
+    spec:
+      externalIPs:
+      - 192.168.122.199
+      ports:
+      - name: port-1
+        port: 80
+        protocol: TCP
+      - name: port-2
+        port: 443
+        protocol: TCP
+      selector:
+        app.kubernetes.io/component: controller
+        app.kubernetes.io/instance: ingress-nginx
+        app.kubernetes.io/name: ingress-nginx
   - name: ingress-nginx-lb
     spec:
       type: LoadBalancer
@@ -75,7 +91,6 @@ k8s_ingress_nginx_services:
         app.kubernetes.io/component: controller
         app.kubernetes.io/instance: ingress-nginx
         app.kubernetes.io/name: ingress-nginx
-
 
 k8s_cert_manager_enable: true
 k8s_cert_manager_issuers:
