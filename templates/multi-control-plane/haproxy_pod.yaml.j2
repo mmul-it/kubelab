@@ -14,13 +14,13 @@ spec:
         path: /healthz
         port: {{ k8s_balancer_port }}
         scheme: HTTPS
-    {% if k8s_ingress_nginx_haproxy_conf | bool %}
+    {% if k8s_ingress_nginx_haproxy_conf | bool -%}
     securityContext:
       capabilities:
         add:
         - NET_BIND_SERVICE
       runAsUser: 0
-    {% endif %}
+    {% endif -%}
     volumeMounts:
     - mountPath: /usr/local/etc/haproxy/haproxy.cfg
       name: haproxyconf
