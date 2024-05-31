@@ -417,12 +417,48 @@ deployment.apps/demo created
 $ kubectl expose deployment demo
 service/demo exposed
 
-$ kubectl create ingress demo --class=nginx --rule="demo.192.168.122.199.nip.io/*=demo:80"
+$ kubectl create ingress demo --class=nginx \
+    --rule="demo.192.168.122.199.nip.io/*=demo:80" \
+    --annotation="nginx.ingress.kubernetes.io/service-upstream=true"
 ingress.networking.k8s.io/demo created
 
 $ curl http://demo.192.168.122.199.nip.io
 <html><body><h1>It works!</h1></body></html>
 ```
+
+Or to test TLS:
+
+```console
+$ kubectl create deployment demo --image=httpd --port=80
+deployment.apps/demo created
+
+$ kubectl expose deployment demo
+service/demo exposed
+
+$ openssl genrsa -out cert.key 2048
+(no output)
+
+$ openssl req -new -key cert.key -out cert.csr -subj "/CN=demo.192.168.122.199.nip.io"
+(no output)
+
+$ openssl x509 -req -days 366 -in cert.csr -signkey cert.key -out cert.crt
+Certificate request self-signature ok
+subject=CN = demo.192.168.122.199.nip.io
+
+$ kubectl create secret tls tls-secret --cert=./cert.crt --key=./cert.key
+secret/tls-secret created
+
+$ kubectl create ingress demo --class=nginx \
+    --rule="demo.192.168.122.199.nip.io/*=demo:80,tls=tls-secret" \
+    --annotation="nginx.ingress.kubernetes.io/service-upstream=true"
+ingress.networking.k8s.io/demo created
+
+$ curl -k https://demo.192.168.122.199.nip.io
+<html><body><h1>It works!</h1></body></html>
+```
+
+The reason why the `--annotation="nginx.ingress.kubernetes.io/service-upstream=true"`
+is needed in explained in this [ingress-nginx issue](https://github.com/kubernetes/ingress-nginx/issues/8081).
 
 #### Ingress NGINX with MetalLB
 

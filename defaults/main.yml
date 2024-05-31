@@ -1,6 +1,6 @@
 ---
 
-k8s_release: 'v1.29'
+k8s_release: 'v1.30'
 
 k8s_local_workdir: "~/kubernetes"
 
@@ -27,6 +27,7 @@ k8s_redhat_packages:
   - containerd.io
   - kubeadm
   - kubectl
+  - kubelet
 
 k8s_container_service: "{{ 'docker' if ansible_distribution_major_version == '7' else 'containerd' }}"
 

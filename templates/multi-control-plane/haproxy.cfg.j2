@@ -2,8 +2,8 @@
 # Global settings
 #---------------------------------------------------------------------
 global
-    log /dev/log local0
-    log /dev/log local1 notice
+    log stdout format raw local0
+    maxconn 4096
     daemon
 
 #---------------------------------------------------------------------
@@ -26,7 +26,6 @@ defaults
     timeout server          20s
     timeout http-keep-alive 10s
     timeout check           10s
-    maxconn                 3000
 
 #---------------------------------------------------------------------
 # main frontend which proxys to the apiserver backends
@@ -41,15 +40,15 @@ frontend apiserver
 # round robin balancing between the various k8s control planes
 #---------------------------------------------------------------------
 backend apiserver
-    option  httpchk GET /readyz HTTP/1.0
-    option  log-health-checks
+    option  httpchk
+    http-check connect ssl
+    http-check send meth GET uri /healthz
     http-check expect status 200
     mode tcp
     balance     roundrobin
-    default-server verify none check-ssl inter 10s downinter 5s rise 2 fall 2 slowstart 60s maxconn 5000 maxqueue 5000 weight 100
 {% for host in ansible_play_batch %}
 {% if hostvars[host].k8s_role == 'control-plane' %}
-    server control-plane-{{ loop.index }} {{ host }}:{{ k8s_control_plane_port }} check
+    server control-plane-{{ loop.index }} {{ host }}:{{ k8s_control_plane_port }} check verify none
 {% endif %}
 {% endfor %}
 
@@ -74,12 +73,8 @@ frontend ingresshttps
 # round robin balancing between the various k8s control planes
 #---------------------------------------------------------------------
 backend ingresshttp
-    option  httpchk GET /readyz HTTP/1.0
-    option  log-health-checks
-    http-check expect status 200
     mode tcp
     balance     roundrobin
-    default-server verify none check-ssl inter 10s downinter 5s rise 2 fall 2 slowstart 60s maxconn 5000 maxqueue 5000 weight 100
 {% for host in ansible_play_batch %}
 {% if hostvars[host].k8s_role == 'control-plane' %}
     server control-plane-{{ loop.index }} {{ host }}:80 check
@@ -87,12 +82,8 @@ backend ingresshttp
 {% endfor %}
 
 backend ingresshttps
-    option  httpchk GET /readyz HTTP/1.0
-    option  log-health-checks
-    http-check expect status 200
     mode tcp
     balance     roundrobin
-    default-server verify none check-ssl inter 10s downinter 5s rise 2 fall 2 slowstart 60s maxconn 5000 maxqueue 5000 weight 100
 {% for host in ansible_play_batch %}
 {% if hostvars[host].k8s_role == 'control-plane' %}
     server control-plane-{{ loop.index }} {{ host }}:443 check
