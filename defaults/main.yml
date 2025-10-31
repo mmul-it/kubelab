@@ -1,6 +1,6 @@
 ---
 
-k8s_release: 'v1.30'
+k8s_release: 'v1.34'
 
 k8s_local_workdir: "~/kubernetes"
 
