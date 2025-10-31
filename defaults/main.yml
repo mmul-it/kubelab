@@ -19,9 +19,9 @@ k8s_debian_packages:
   - docker-ce
   - docker-ce-cli
   - containerd.io
-  - kubelet
-  - kubeadm
-  - kubectl
+  - kubelet={{ k8s_release | replace('v', '')  }}*
+  - kubeadm={{ k8s_release | replace('v', '')  }}*
+  - kubectl={{ k8s_release | replace('v', '')  }}*
 
 k8s_redhat_packages:
   - containerd.io
